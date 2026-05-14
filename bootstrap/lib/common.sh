@@ -88,14 +88,16 @@ marker_summary() {
 }
 
 # --- GESTION DU VERROU APT/DPKG ---------------------------------------------
+# On verifie uniquement les fichiers de verrou (source de verite).
+# On NE matche PAS le processus "unattended-upgr" car le service
+# unattended-upgrades-shutdown reste en attente de signal en permanence.
 wait_for_apt_lock() {
     local max_wait=600
     local waited=0
     local interval=3
     while fuser /var/lib/dpkg/lock-frontend &>/dev/null \
        || fuser /var/lib/dpkg/lock &>/dev/null \
-       || fuser /var/lib/apt/lists/lock &>/dev/null \
-       || pgrep -f unattended-upgr &>/dev/null; do
+       || fuser /var/lib/apt/lists/lock &>/dev/null; do
         if (( waited >= max_wait )); then
             log_error "Verrou apt/dpkg toujours detenu apres ${max_wait}s. Abandon."
             return 1
