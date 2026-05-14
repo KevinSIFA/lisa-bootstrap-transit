@@ -1,0 +1,30 @@
+# Secrets - JAMAIS commit
+.env.bootstrap
+secrets/
+*.json.bak
+
+# Cles SSH locales (au cas ou)
+*.pem
+*_key
+*_key.pub
+
+# Fichiers OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editeur
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Logs locaux
+*.log
