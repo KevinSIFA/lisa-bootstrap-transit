@@ -2,14 +2,6 @@
 # ============================================================================
 # 03-os-tools.sh — Outils OS pour l'extraction et la securite PDF
 # ============================================================================
-# Installe au niveau systeme (apt) :
-#   - Tesseract OCR + langpacks (fra + eng + osd)
-#   - exiftool (nettoyage metadonnees PDF)
-#   - qpdf (manipulation/securite PDF)
-#   - git (versioning catalogue)
-#   - Outils de compilation (pour pip install plus tard)
-#   - sqlite3 + extension sqlite-vec (compile depuis source)
-# ============================================================================
 
 set -euo pipefail
 
@@ -20,6 +12,7 @@ source "${LIB_DIR}/common.sh"
 log_step "Module 03 : outils OS pour extraction"
 
 export DEBIAN_FRONTEND=noninteractive
+wait_for_apt_lock
 
 
 # --- 1. Tesseract OCR + langpacks -------------------------------------------
@@ -35,18 +28,20 @@ log_ok "Tesseract installe : ${tess_version}"
 
 
 # --- 2. exiftool, qpdf, outils PDF ------------------------------------------
-log_info "Installation des outils PDF (exiftool, qpdf, poppler)..."
+log_info "Installation des outils PDF..."
+wait_for_apt_lock
 apt-get -qq -y install \
     libimage-exiftool-perl \
     qpdf \
     poppler-utils \
     ghostscript
 
-log_ok "Outils PDF installes (exiftool $(exiftool -ver), qpdf $(qpdf --version | head -1 | awk '{print $NF}'))"
+log_ok "Outils PDF installes"
 
 
 # --- 3. Git + outils de compilation -----------------------------------------
 log_info "Installation de git et chaine de compilation..."
+wait_for_apt_lock
 apt-get -qq -y install \
     git \
     build-essential \
@@ -55,33 +50,28 @@ apt-get -qq -y install \
     libffi-dev \
     cmake
 
-log_ok "Git $(git --version | awk '{print $3}') + chaine de compilation installes"
+log_ok "Git et chaine de compilation installes"
 
 
 # --- 4. SQLite + extension sqlite-vec ---------------------------------------
-log_info "Installation de SQLite 3 et de l'extension sqlite-vec..."
+log_info "Installation de SQLite 3 et de sqlite-vec..."
+wait_for_apt_lock
 apt-get -qq -y install sqlite3 libsqlite3-dev
 
-# sqlite-vec : on installe depuis les binaires precompiles (Linux x86_64)
-# Plus simple et plus fiable que la compilation depuis source
 SQLITE_VEC_VERSION="v0.1.6"
 SQLITE_VEC_DIR="/opt/lisa/sqlite-vec"
 
 if [[ -f "${SQLITE_VEC_DIR}/vec0.so" ]]; then
-    log_ok "sqlite-vec deja installe : ${SQLITE_VEC_DIR}/vec0.so"
+    log_ok "sqlite-vec deja installe"
 else
     mkdir -p "${SQLITE_VEC_DIR}"
     cd "${SQLITE_VEC_DIR}"
 
-    # Detection architecture
     arch=$(uname -m)
     case "${arch}" in
         x86_64)  asset="sqlite-vec-${SQLITE_VEC_VERSION#v}-loadable-linux-x86_64.tar.gz" ;;
         aarch64) asset="sqlite-vec-${SQLITE_VEC_VERSION#v}-loadable-linux-aarch64.tar.gz" ;;
-        *)
-            log_error "Architecture non supportee pour sqlite-vec : ${arch}"
-            exit 1
-            ;;
+        *) log_error "Architecture non supportee : ${arch}"; exit 1 ;;
     esac
 
     url="https://github.com/asg017/sqlite-vec/releases/download/${SQLITE_VEC_VERSION}/${asset}"
@@ -89,18 +79,17 @@ else
     curl -fL -o sqlite-vec.tar.gz "${url}"
     tar -xzf sqlite-vec.tar.gz
     rm -f sqlite-vec.tar.gz
-    chmod +x ./*.so
+    chmod +x ./*.so 2>/dev/null || true
 
     if [[ ! -f "vec0.so" ]]; then
-        log_error "Echec installation sqlite-vec : vec0.so introuvable"
+        log_error "Echec installation sqlite-vec"
         exit 1
     fi
     log_ok "sqlite-vec installe : ${SQLITE_VEC_DIR}/vec0.so"
 fi
 
-# Test de chargement de l'extension
 if echo "SELECT vec_version();" | sqlite3 -cmd ".load ${SQLITE_VEC_DIR}/vec0" ":memory:" > /dev/null 2>&1; then
-    log_ok "sqlite-vec se charge correctement dans SQLite"
+    log_ok "sqlite-vec se charge correctement"
 else
     log_warn "sqlite-vec installe mais ne se charge pas (sera retente plus tard)"
 fi
@@ -110,9 +99,9 @@ fi
 log_info "Verification finale des outils..."
 for cmd in tesseract exiftool qpdf git sqlite3 cmake; do
     if command -v "${cmd}" &>/dev/null; then
-        log_ok "  - ${cmd} : $(command -v ${cmd})"
+        log_ok "  - ${cmd} OK"
     else
-        log_error "  - ${cmd} : INTROUVABLE"
+        log_error "  - ${cmd} INTROUVABLE"
         exit 1
     fi
 done

@@ -2,21 +2,9 @@
 # ============================================================================
 # 01-prerequisites.sh — Verifications systeme et preparation de base
 # ============================================================================
-# Verifie que le VPS est conforme :
-#   - OS : Ubuntu 24.04 LTS
-#   - RAM : >= 14 Go (sur 16 Go nominal)
-#   - Disque libre : >= 150 Go
-#   - Connectivite internet
-# Puis :
-#   - Definit le hostname
-#   - Configure le fuseau horaire
-#   - apt update + upgrade (uniquement security)
-#   - Ajoute 4 Go de swap si absent (filet de securite)
-# ============================================================================
 
 set -euo pipefail
 
-# Charge la lib (le module est appele par bootstrap-lisa.sh qui a deja charge l'env)
 LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)"
 # shellcheck source=../lib/common.sh
 source "${LIB_DIR}/common.sh"
@@ -53,14 +41,22 @@ log_ok "Espace disque libre : ${disk_free_gb} Go"
 
 
 # --- 4. Connectivite internet -----------------------------------------------
+# On accepte n'importe quel code HTTP (meme 401/403) car certains endpoints
+# renvoient ces codes sans auth.
 log_info "Verification de la connectivite internet..."
-for host in archive.ubuntu.com github.com api.anthropic.com generativelanguage.googleapis.com login.tailscale.com; do
-    if ! curl -fsS --max-time 5 -o /dev/null "https://${host}" 2>/dev/null \
-       && ! curl -fsS --max-time 5 -o /dev/null "http://${host}" 2>/dev/null; then
-        log_warn "Hote injoignable : ${host} (poursuite, mais a verifier)"
+internet_ok=false
+for host in www.google.com github.com archive.ubuntu.com; do
+    code=$(curl -sS --max-time 8 -o /dev/null -w "%{http_code}" "https://${host}" 2>/dev/null || echo "000")
+    if [[ "${code}" != "000" ]]; then
+        log_ok "Connectivite confirmee via ${host} (HTTP ${code})"
+        internet_ok=true
+        break
     fi
 done
-log_ok "Connectivite internet OK"
+if ! $internet_ok; then
+    log_error "Aucune connectivite internet detectee. Verifie le reseau."
+    exit 1
+fi
 
 
 # --- 5. Hostname ------------------------------------------------------------
@@ -71,7 +67,6 @@ if [[ -z "${target_hostname}" ]]; then
 elif [[ "${current_hostname}" != "${target_hostname}" ]]; then
     log_info "Configuration du hostname : ${target_hostname}"
     hostnamectl set-hostname "${target_hostname}"
-    # Met a jour /etc/hosts pour eviter les warnings sudo
     if ! grep -q "${target_hostname}" /etc/hosts; then
         echo "127.0.1.1 ${target_hostname}" >> /etc/hosts
     fi
@@ -94,6 +89,9 @@ fi
 
 
 # --- 7. apt update + upgrade securite ---------------------------------------
+log_info "Verification du verrou apt/dpkg avant apt-get..."
+wait_for_apt_lock
+
 log_info "Mise a jour de la liste des paquets..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
@@ -114,11 +112,9 @@ if (( swap_size_kb < 1024 * 1024 )); then
     chmod 600 /swapfile
     mkswap /swapfile > /dev/null
     swapon /swapfile
-    # Persiste dans /etc/fstab
     if ! grep -q "^/swapfile" /etc/fstab; then
         echo "/swapfile none swap sw 0 0" >> /etc/fstab
     fi
-    # Tuning : reduit l'utilisation aggressive du swap
     sysctl -w vm.swappiness=10 > /dev/null
     if ! grep -q "^vm.swappiness" /etc/sysctl.conf; then
         echo "vm.swappiness=10" >> /etc/sysctl.conf
@@ -131,10 +127,11 @@ fi
 
 # --- 9. Outils basiques pour la suite ---------------------------------------
 log_info "Installation des outils CLI de base..."
+wait_for_apt_lock
 apt-get -qq -y install \
     curl wget ca-certificates gnupg lsb-release \
     software-properties-common apt-transport-https \
-    htop nano vim less rsync jq
+    htop nano vim less rsync jq lsof
 log_ok "Outils CLI de base installes"
 
 

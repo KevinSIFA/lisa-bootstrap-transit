@@ -2,11 +2,6 @@
 # ============================================================================
 # 04-python-stack.sh — Pile Python isolee dans /opt/lisa/venv
 # ============================================================================
-# - Installe Python 3.12 et dependances de build
-# - Cree un environnement virtuel a /opt/lisa/venv
-# - Installe toutes les bibliotheques Python necessaires au pipeline
-# - Genere /opt/lisa/requirements.txt fige (versions pinnees)
-# ============================================================================
 
 set -euo pipefail
 
@@ -17,6 +12,7 @@ source "${LIB_DIR}/common.sh"
 log_step "Module 04 : pile Python (venv + bibliotheques)"
 
 export DEBIAN_FRONTEND=noninteractive
+wait_for_apt_lock
 
 LISA_HOME="/opt/lisa"
 VENV_PATH="${LISA_HOME}/venv"
@@ -40,7 +36,7 @@ log_ok "Python installe : ${py_version}"
 
 
 # --- 2. Creation de l'environnement virtuel ---------------------------------
-log_info "Preparation de l'arborescence /opt/lisa/..."
+log_info "Preparation de /opt/lisa/..."
 mkdir -p "${LISA_HOME}"
 chown openclaw:openclaw "${LISA_HOME}"
 
@@ -48,60 +44,53 @@ if [[ -d "${VENV_PATH}" ]]; then
     log_ok "Venv deja present : ${VENV_PATH}"
 else
     log_info "Creation du venv : ${VENV_PATH}"
-    # Cree le venv avec les droits openclaw
     sudo -u openclaw python3.12 -m venv "${VENV_PATH}"
     log_ok "Venv cree"
 fi
 
-# Met a jour pip dans le venv
 sudo -u openclaw "${VENV_PATH}/bin/python" -m pip install --quiet --upgrade pip setuptools wheel
 
 
 # --- 3. Generation du requirements.txt --------------------------------------
 log_info "Ecriture de ${REQ_FILE}..."
 cat > "${REQ_FILE}" <<'EOF'
-# ============================================================================
 # LISA — Bibliotheques Python (pipeline d'extraction de factures)
-# ============================================================================
-# Versions pinnees pour reproductibilite.
-# Mise a jour : trimestrielle (suivre les advisories de securite).
-# ============================================================================
 
-# --- Extraction PDF ---
+# Extraction PDF
 pymupdf==1.24.10
 pymupdf4llm==0.0.17
 
-# --- OCR ---
+# OCR
 pytesseract==0.3.13
 rapidocr-onnxruntime==1.3.24
 
-# --- Preprocessing image ---
+# Preprocessing image
 opencv-python-headless==4.10.0.84
 pillow==10.4.0
 
-# --- Manipulation de donnees ---
+# Manipulation de donnees
 pandas==2.2.3
 numpy==1.26.4
 rapidfuzz==3.10.1
 
-# --- IA APIs ---
+# IA APIs
 anthropic==0.39.0
 google-cloud-aiplatform==1.71.1
 google-api-python-client==2.149.0
 google-auth==2.35.0
 google-auth-httplib2==0.2.0
 
-# --- Telegram bot (canal de pilotage opérateur) ---
+# Telegram bot
 python-telegram-bot==21.6
 
-# --- Base vectorielle (grimoire RAG) ---
+# Base vectorielle
 sqlite-vec==0.1.6
 
-# --- Validation et configuration ---
+# Validation
 pydantic==2.9.2
 python-dotenv==1.0.1
 
-# --- Utilitaires ---
+# Utilitaires
 requests==2.32.3
 click==8.1.7
 tenacity==9.0.0
@@ -112,30 +101,19 @@ log_ok "requirements.txt ecrit"
 
 
 # --- 4. Installation des bibliotheques --------------------------------------
-log_info "Installation des bibliotheques Python (ca peut prendre 3-5 minutes)..."
+log_info "Installation des bibliotheques Python (3-5 min)..."
 sudo -u openclaw "${VENV_PATH}/bin/pip" install \
     --quiet \
     --disable-pip-version-check \
     -r "${REQ_FILE}"
 
-# Verifie quelques imports critiques
 log_info "Verification des imports critiques..."
 sudo -u openclaw "${VENV_PATH}/bin/python" - <<'PYEOF'
 import sys
 modules = [
-    "fitz",                        # pymupdf
-    "pymupdf4llm",
-    "pytesseract",
-    "cv2",                         # opencv
-    "pandas",
-    "anthropic",
-    "google.cloud.aiplatform",
-    "google.oauth2.service_account",
-    "telegram",                    # python-telegram-bot
-    "sqlite_vec",
-    "pydantic",
-    "dotenv",                      # python-dotenv
-    "loguru",
+    "fitz", "pymupdf4llm", "pytesseract", "cv2", "pandas",
+    "anthropic", "google.cloud.aiplatform", "telegram",
+    "sqlite_vec", "pydantic", "dotenv", "loguru",
 ]
 errors = []
 for m in modules:
@@ -153,8 +131,7 @@ PYEOF
 log_ok "Tous les imports Python critiques OK"
 
 
-# --- 5. Activation du venv pour l'utilisateur openclaw ----------------------
-# Ajoute le venv au PATH dans .bashrc d'openclaw (pratique pour debug)
+# --- 5. Activation du venv pour openclaw ------------------------------------
 bashrc="/home/openclaw/.bashrc"
 if [[ -f "${bashrc}" ]] && ! grep -q "LISA venv" "${bashrc}"; then
     cat >> "${bashrc}" <<EOF
@@ -164,7 +141,7 @@ if [[ -f ${VENV_PATH}/bin/activate ]]; then
     source ${VENV_PATH}/bin/activate
 fi
 EOF
-    log_ok "Venv active automatiquement pour openclaw (.bashrc)"
+    log_ok "Venv active automatiquement pour openclaw"
 fi
 
 
