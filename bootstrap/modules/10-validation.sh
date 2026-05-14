@@ -52,7 +52,7 @@ echo
 echo -e "${C_BOLD}=== Securite ===${C_RESET}"
 check "UFW actif" "ufw status | grep -q 'Status: active'"
 check "fail2ban actif" "systemctl is-active --quiet fail2ban"
-check "SSH password auth disabled" "sshd -T 2>/dev/null | grep -q 'passwordauthentication no'"
+check "SSH password auth disabled" "grep -q '^passwordauthentication no$' <(sshd -T 2>/dev/null)"
 check "SSH 22 bloque sur internet" "ufw status | grep -q '22/tcp.*DENY'"
 check "SSH accessible via Tailscale" "ufw status | grep -q '22/tcp on tailscale0'"
 check "unattended-upgrades actif" "systemctl is-active --quiet unattended-upgrades"
