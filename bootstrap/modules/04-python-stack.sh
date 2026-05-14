@@ -29,7 +29,9 @@ apt-get -qq -y install \
     libjpeg-dev \
     zlib1g-dev \
     libxml2-dev \
-    libxslt1-dev
+    libxslt1-dev \
+    libgl1 \
+    libglib2.0-0
 
 py_version=$(python3.12 --version 2>&1)
 log_ok "Python installe : ${py_version}"
@@ -53,7 +55,7 @@ sudo -u openclaw "${VENV_PATH}/bin/python" -m pip install --quiet --upgrade pip 
 
 # --- 3. Generation du requirements.txt --------------------------------------
 log_info "Ecriture de ${REQ_FILE}..."
-cat > "${REQ_FILE}" <<'EOF'
+cat > "${REQ_FILE}" <<'REQEOF'
 # LISA — Bibliotheques Python (pipeline d'extraction de factures)
 
 # Extraction PDF
@@ -95,7 +97,7 @@ requests==2.32.3
 click==8.1.7
 tenacity==9.0.0
 loguru==0.7.2
-EOF
+REQEOF
 chown openclaw:openclaw "${REQ_FILE}"
 log_ok "requirements.txt ecrit"
 
@@ -108,7 +110,7 @@ sudo -u openclaw "${VENV_PATH}/bin/pip" install \
     -r "${REQ_FILE}"
 
 log_info "Verification des imports critiques..."
-sudo -u openclaw "${VENV_PATH}/bin/python" - <<'PYEOF'
+sudo -u openclaw "${VENV_PATH}/bin/python" - <<'IMPORTEOF'
 import sys
 modules = [
     "fitz", "pymupdf4llm", "pytesseract", "cv2", "pandas",
@@ -127,20 +129,20 @@ if errors:
         print("  -", e)
     sys.exit(1)
 print(f"OK : {len(modules)} modules importables")
-PYEOF
+IMPORTEOF
 log_ok "Tous les imports Python critiques OK"
 
 
 # --- 5. Activation du venv pour openclaw ------------------------------------
 bashrc="/home/openclaw/.bashrc"
 if [[ -f "${bashrc}" ]] && ! grep -q "LISA venv" "${bashrc}"; then
-    cat >> "${bashrc}" <<EOF
+    cat >> "${bashrc}" <<BASHEOF
 
 # LISA venv (active automatiquement)
 if [[ -f ${VENV_PATH}/bin/activate ]]; then
     source ${VENV_PATH}/bin/activate
 fi
-EOF
+BASHEOF
     log_ok "Venv active automatiquement pour openclaw"
 fi
 
