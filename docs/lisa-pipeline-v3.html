@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LISA — Pipeline V3 — Spec technique mai 2026</title>
+<style>
+  :root {
+    --c-bg: #ffffff;
+    --c-text: #1a1a1a;
+    --c-muted: #6b7280;
+    --c-border: #e5e7eb;
+    --c-accent: #1e40af;
+    --c-accent-soft: #eff6ff;
+    --c-code-bg: #f6f7f9;
+    --c-decision: #064e3b;
+    --c-decision-bg: #ecfdf5;
+    --c-warn: #92400e;
+    --c-warn-bg: #fffbeb;
+    --c-info: #1e3a8a;
+    --c-info-bg: #eff6ff;
+    --c-danger: #991b1b;
+    --c-danger-bg: #fef2f2;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--c-text);
+    background: var(--c-bg);
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 36px 80px;
+  }
+  header.doc-head {
+    border-bottom: 3px solid var(--c-accent);
+    padding-bottom: 18px;
+    margin-bottom: 30px;
+  }
+  header.doc-head h1 {
+    margin: 0 0 6px 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--c-accent);
+  }
+  header.doc-head .subtitle {
+    color: var(--c-muted);
+    font-size: 15px;
+  }
+  header.doc-head .meta {
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--c-muted);
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+  header.doc-head .meta strong { color: var(--c-text); }
+
+  nav.toc {
+    background: var(--c-code-bg);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 18px 24px;
+    margin: 0 0 36px 0;
+    column-count: 2;
+    column-gap: 32px;
+    font-size: 13px;
+  }
+  nav.toc h2 {
+    column-span: all;
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--c-muted);
+  }
+  nav.toc ol { margin: 0; padding-left: 22px; }
+  nav.toc li { margin-bottom: 4px; break-inside: avoid; }
+  nav.toc a {
+    color: var(--c-text);
+    text-decoration: none;
+    border-bottom: 1px dotted transparent;
+  }
+  nav.toc a:hover { border-bottom-color: var(--c-accent); color: var(--c-accent); }
+
+  section { margin-bottom: 48px; }
+  section > h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--c-accent);
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--c-accent-soft);
+    margin: 0 0 18px 0;
+    scroll-margin-top: 20px;
+  }
+  section > h2 .num {
+    display: inline-block;
+    background: var(--c-accent);
+    color: white;
+    font-size: 13px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 10px;
+    vertical-align: middle;
+    font-weight: 600;
+  }
+  section > h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 24px 0 10px;
+    color: var(--c-text);
+  }
+  section > h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 16px 0 8px;
+    color: var(--c-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  p { margin: 0 0 12px 0; }
+  ul, ol { margin: 0 0 14px 0; padding-left: 24px; }
+  li { margin-bottom: 4px; }
+
+  code {
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 12.5px;
+    background: var(--c-code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #b91c1c;
+  }
+  pre {
+    background: var(--c-code-bg);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.5;
+    margin: 12px 0;
+  }
+  pre code { background: none; padding: 0; color: var(--c-text); }
+  pre.ascii { font-size: 12px; line-height: 1.3; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 12px 0 20px 0;
+  }
+  th, td {
+    border: 1px solid var(--c-border);
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: var(--c-code-bg);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--c-muted);
+  }
+  tr:nth-child(even) td { background: #fafbfc; }
+
+  .box {
+    border-left: 4px solid;
+    padding: 12px 18px;
+    margin: 14px 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 13.5px;
+  }
+  .box .label {
+    display: inline-block;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    margin-bottom: 4px;
+  }
+  .box p:last-child { margin-bottom: 0; }
+  .box.decision { background: var(--c-decision-bg); border-color: var(--c-decision); }
+  .box.decision .label { color: var(--c-decision); }
+  .box.info { background: var(--c-info-bg); border-color: var(--c-info); }
+  .box.info .label { color: var(--c-info); }
+  .box.warn { background: var(--c-warn-bg); border-color: var(--c-warn); }
+  .box.warn .label { color: var(--c-warn); }
+  .box.danger { background: var(--c-danger-bg); border-color: var(--c-danger); }
+  .box.danger .label { color: var(--c-danger); }
+
+  .pill {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .pill.new { background: #ecfdf5; color: #065f46; }
+  .pill.changed { background: #fef3c7; color: #92400e; }
+  .pill.removed { background: #fee2e2; color: #991b1b; text-decoration: line-through; }
+  .pill.kept { background: #e0e7ff; color: #3730a3; }
+
+  hr.section-sep {
+    border: none;
+    border-top: 1px dashed var(--c-border);
+    margin: 32px 0;
+  }
+
+  footer.doc-foot {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--c-border);
+    color: var(--c-muted);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  @media print {
+    body { font-size: 11pt; }
+    .container { max-width: 100%; padding: 0; }
+    nav.toc { break-after: page; }
+    section { break-inside: avoid; }
+    section > h2 { break-after: avoid; }
+    pre { font-size: 9pt; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="doc-head">
+  <h1>LISA — Pipeline V3</h1>
+  <div class="subtitle">Système d'extraction automatisée de factures douanières — SIFA Nouvelle-Calédonie</div>
+  <div class="meta">
+    <span><strong>Version :</strong> 3.0</span>
+    <span><strong>Date :</strong> 15 mai 2026</span>
+    <span><strong>Statut :</strong> Spec en construction</span>
+    <span><strong>Porteur :</strong> Kevin Bramoulle</span>
+    <span><strong>Audience :</strong> projet interne SIFA</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>Table des matières</h2>
+  <ol>
+    <li><a href="#s1">Vision &amp; contexte</a></li>
+    <li><a href="#s2">Volumes &amp; coûts cible mai 2026</a></li>
+    <li><a href="#s3">Stack technique finale</a></li>
+    <li><a href="#s4">Flow de bout-en-bout</a></li>
+    <li><a href="#s5">Étape Sanitize (sécurité PDF)</a></li>
+    <li><a href="#s6">Étape Vision split (Gemini Flash)</a></li>
+    <li><a href="#s7">Identité fournisseur autonome</a></li>
+    <li><a href="#s8">Catalogue par fournisseur</a></li>
+    <li><a href="#s9">Types de documents</a></li>
+    <li><a href="#s10">Logique de réparation des scripts</a></li>
+    <li><a href="#s11">Health score décroissant</a></li>
+    <li><a href="#s12">Fallback Gemini V6.1</a></li>
+    <li><a href="#s13">Grimoire RAG (3 catégories)</a></li>
+    <li><a href="#s14">Quarantaine</a></li>
+    <li><a href="#s15">Interfaces opérateur</a></li>
+    <li><a href="#s16">Sécurité OpenClaw</a></li>
+    <li><a href="#s17">Prompt caching</a></li>
+    <li><a href="#s18">Décisions actées vs V1</a></li>
+    <li><a href="#s19">Roadmap livraisons</a></li>
+    <li><a href="#s20">Sources &amp; références</a></li>
+  </ol>
+</nav>
+
+
+<section id="s1">
+<h2><span class="num">1</span> Vision &amp; contexte</h2>
+
+<p><strong>LISA</strong> (Lecture Intelligente et Structuration Automatisée) est un agent autonome qui transforme les factures douanières arrivant dans une Inbox Drive en JSON structurés au format SYDONIA — sans intervention humaine sauf cas exceptionnel.</p>
+
+<h3>Principe directeur</h3>
+
+<div class="box decision">
+  <div class="label">Décision actée</div>
+  <p><em>L'IA construit l'usine, la machine tourne.</em></p>
+  <p>LISA utilise des <strong>scripts Python déterministes par fournisseur</strong> chaque fois que possible (coût quasi-nul, latence faible, traçabilité parfaite). Elle n'invoque l'IA qu'aux moments critiques : Vision pour split + détection fournisseur, Opus 4.7 pour générer / réparer les scripts, Gemini V6.1 en filet de sécurité.</p>
+</div>
+
+<h3>Périmètre métier</h3>
+
+<ul>
+  <li><strong>Entrée</strong> : factures douanières fournisseurs (PDF natifs ou scans), arrivées via mail/courrier et déposées par les déclarants SIFA dans la Drive Inbox de LISA.</li>
+  <li><strong>Sortie</strong> : JSON structuré au schéma SYDONIA V6.1 (header + lines), poussé dans Drive Outbox pour ingestion EDI SIFA.</li>
+  <li><strong>Garantie absolue</strong> : LISA produit TOUJOURS un résultat (fallback Gemini si tout le reste échoue), sauf cas explicite de quarantaine (cf. §13).</li>
+  <li><strong>Hors périmètre</strong> : déclaration douanière elle-même, signature électronique SYDONIA, gestion comptable.</li>
+</ul>
+
+<h3>Acteurs</h3>
+
+<table>
+  <tr><th>Rôle</th><th>Description</th></tr>
+  <tr><td>LISA (agent)</td><td>Sonnet 4.6 + Opus 4.7 + Haiku 4.5 + Gemini 3 Flash + Gemini 3.1 Pro, orchestrée par OpenClaw ≥ 2026.5.6 sur VPS Hostinger KVM4</td></tr>
+  <tr><td>Kevin (opérateur)</td><td>Pilotage via Telegram (whitelist user_id), supervision via 5 vues Google Apps Script</td></tr>
+  <tr><td>Déclarants SIFA</td><td>Dépôt des PDF dans Inbox, saisie des règles métier par fournisseur via vue "Instructions" GAS</td></tr>
+</table>
+</section>
+
+<section id="s2">
+<h2><span class="num">2</span> Volumes &amp; coûts cible mai 2026</h2>
+
+<h3>Volumétrie attendue</h3>
+
+<table>
+  <tr><th>Métrique</th><th>Valeur cible</th><th>Note</th></tr>
+  <tr><td>Factures / an</td><td>~40 000</td><td>Estimation SIFA 2026</td></tr>
+  <tr><td>Factures / jour ouvré</td><td>~110</td><td>Distribution non uniforme (rafales matin)</td></tr>
+  <tr><td>Pages par document</td><td>~4 en moyenne</td><td>Range 1 à 30+</td></tr>
+  <tr><td>Fournisseurs récurrents</td><td>~100</td><td>Top 20 = ~80 % du volume</td></tr>
+  <tr><td>Part de scans</td><td>~70 %</td><td>Le reste = PDF natifs</td></tr>
+  <tr><td>Documents multi-factures</td><td>~10 %</td><td>Justifie l'étape Vision split</td></tr>
+</table>
+
+<h3>Infrastructure cible</h3>
+
+<ul>
+  <li><strong>VPS Hostinger KVM4</strong> : 8 vCPU, 16 Go RAM, 200 Go NVMe, Ubuntu 24.04 LTS, CPU-only (pas de GPU)</li>
+  <li><strong>Coût VPS</strong> : ~19 800 F CFP / an (~165 USD)</li>
+  <li><strong>Coût LLM</strong> estimé : ~260 USD / an avec caching exploité (vs ~1 080 USD sans caching, cf. §16)</li>
+  <li><strong>Coût total tout compris</strong> : ~1,33 F CFP par facture traitée</li>
+</ul>
+
+<div class="box info">
+  <div class="label">Note</div>
+  <p>L'estimation coût LLM se base sur 5-10 appels Gemini Pro fallback par jour (les 90 % restants passent par script déterministe — coût quasi nul). Si la proportion scripts/Gemini change, le coût varie linéairement.</p>
+</div>
+</section>
+
+<section id="s3">
+<h2><span class="num">3</span> Stack technique finale</h2>
+
+<h3>Modèles IA assignés</h3>
+
+<table>
+  <tr><th>Rôle</th><th>Modèle</th><th>ID OpenClaw</th><th>Paramètres clés</th></tr>
+  <tr><td>Orchestrateur agent</td><td>Claude Sonnet 4.6</td><td><code>anthropic/claude-sonnet-4-6</code></td><td><code>cacheRetention: "long"</code> (1h)</td></tr>
+  <tr><td>Réparation scripts</td><td>Claude Opus 4.7</td><td><code>anthropic/claude-opus-4-7</code></td><td><code>thinking: "adaptive"</code>, cache 1h</td></tr>
+  <tr><td>Cron jobs légers</td><td>Claude Haiku 4.5</td><td><code>anthropic/claude-haiku-4-5</code></td><td>Pas de cache (sous seuil 4 096)</td></tr>
+  <tr><td>Vision split &amp; route</td><td>Gemini 3 Flash Preview</td><td><code>google/gemini-3-flash-preview</code></td><td>Implicit caching uniquement</td></tr>
+  <tr><td>Fallback extraction</td><td>Gemini 3.1 Pro Thinking</td><td><code>google/gemini-3.1-pro-preview</code></td><td><code>thinking_level: "medium"</code>, implicit caching</td></tr>
+</table>
+
+<h3>Chaîne de fallback OpenClaw</h3>
+
+<pre><code>primary:   anthropic/claude-sonnet-4-6
+fallbacks: [anthropic/claude-opus-4-7, google/gemini-3.1-pro-preview]
+pdfModel:  google/gemini-3.1-pro-preview
+heartbeat.model: anthropic/claude-haiku-4-5</code></pre>
+
+<h3>Pile technique (25 outils + nouveaux)</h3>
+
+<table>
+  <tr><th>Catégorie</th><th>Outils</th></tr>
+  <tr><td>Infrastructure (5)</td><td>OpenClaw ≥ 2026.5.6, systemd, UFW, Tailscale, sops (remplace <code>pass</code>)</td></tr>
+  <tr><td>Extraction PDF / OCR (5)</td><td>PyMuPDF, PyMuPDF4LLM, Tesseract, rapidfuzz, OpenCV</td></tr>
+  <tr><td>Pré-traitement (3)</td><td>exiftool, qpdf, deskew (cv2)</td></tr>
+  <tr><td>Données (1)</td><td>pandas</td></tr>
+  <tr><td>API REST + exposition (3)</td><td>FastAPI, uvicorn, Cloudflare Tunnel</td></tr>
+  <tr><td>Interface humaine (2)</td><td>Google Apps Script, Google Sheets</td></tr>
+  <tr><td>Observabilité (2)</td><td>google-cloud-billing, Netdata</td></tr>
+  <tr><td>Grimoire RAG (1)</td><td>sqlite-vec (avec embeddings Haiku)</td></tr>
+  <tr><td>Backup (1)</td><td>rclone vers Backblaze B2</td></tr>
+  <tr><td>SDK IA (2)</td><td>anthropic, google-genai (nouveau SDK 2026, remplace google-cloud-aiplatform)</td></tr>
+</table>
+
+<div class="box warn">
+  <div class="label">Changement vs V1</div>
+  <p>Le SDK Google passe de <code>google-cloud-aiplatform</code> (legacy) à <code>google-genai</code> (nouveau SDK unifié 2026, supporte Vertex AI et API directe). Le bootstrap module 04-python-stack.sh doit être mis à jour.</p>
+</div>
+</section>
+
+<section id="s4">
+<h2><span class="num">4</span> Flow de bout-en-bout</h2>
+
+<h3>Diagramme global</h3>
+
+<pre class="ascii">
+  ┌──────────────────────────────────────────────────────────────────┐
+  │                  DRIVE INBOX (PDF entrants)                      │
+  └─────────────────────────────┬────────────────────────────────────┘
+                                │ watcher (cron Haiku)
+                                ▼
+  ┌──────────────────────────────────────────────────────────────────┐
+  │   QUEUE PERSISTANTE SQLITE  (FIFO, 1-par-1)                      │
+  └─────────────────────────────┬────────────────────────────────────┘
+                                │
+                                ▼
+  ┌──────────────────────────────────────────────────────────────────┐
+  │   SANITIZE  (exiftool strip metadata + qpdf linearize)           │
+  └─────────────────────────────┬────────────────────────────────────┘
+                                │
+                                ▼
+  ┌──────────────────────────────────────────────────────────────────┐
+  │   VISION SPLIT  (Gemini 3 Flash, 1 prompt)                       │
+  │   → "BERTRAND_EXPORT_FAC65447 (COMPLETE) Page 1à4,               │
+  │      AMAZON_AU_65425 (INCOMPLETE) Page 5à6"                      │
+  └─────────────────────────────┬────────────────────────────────────┘
+                                │
+                  ┌─────────────┴─────────────┐
+                  │                           │
+       ┌──────────▼──────────┐    ┌───────────▼──────────┐
+       │  INCOMPLETE         │    │  COMPLETE & VALID    │
+       │  → QUARANTAINE      │    │  → split en N PDF    │
+       │  → Telegram Kevin   │    │     nommés F_N°.pdf  │
+       └─────────────────────┘    └───────────┬──────────┘
+                                              │
+                                              ▼  (boucle pour chaque facture splittée)
+  ┌──────────────────────────────────────────────────────────────────┐
+  │   IDENTITÉ FOURNISSEUR  (slug + sqlite-vec embedding)            │
+  │   → existant fusionné OU nouveau créé OU flag review Kevin       │
+  └─────────────────────────────┬────────────────────────────────────┘
+                                │
+                                ▼
+  ┌──────────────────────────────────────────────────────────────────┐
+  │   CLASSIFICATION TYPE  (natif / scan_propre / scan_difficile)    │
+  │   - PyMuPDF text length → natif si > seuil                       │
+  │   - Tesseract avg_confidence → propre si ≥ 75, difficile sinon   │
+  └─────────────────────────────┬────────────────────────────────────┘
+                                │
+                                ▼
+  ┌──────────────────────────────────────────────────────────────────┐
+  │   CHERCHE SCRIPT (fournisseur, type) DANS CATALOGUE              │
+  └─────────────────────────────┬────────────────────────────────────┘
+                                │
+            ┌───────────────────┼───────────────────┐
+            │                   │                   │
+   ┌────────▼─────────┐ ┌───────▼────────┐ ┌────────▼─────────┐
+   │ Script existe    │ │ Script existe  │ │ Aucun script    │
+   │ → applique       │ │ pour AUTRE type│ │ pour ce fourn.  │
+   │ → validate math  │ │ → tente celui-ci│ │ → seed Opus     │
+   │                  │ │                │ │   (Option B)    │
+   └────┬─────────────┘ └──────┬─────────┘ └────────┬─────────┘
+        │                      │                   │
+        │ math OK              │ math OK           │ script généré
+        │ → drive-push         │ → drive-push      │ → applique
+        │                      │                   │   → drive-push
+        │ math KO              │ math KO           │
+        ▼                      ▼                   ▼
+  ┌──────────────────────────────────────────────────────────────────┐
+  │   RÉPARATION OPUS 4.7                                            │
+  │   Input : script actuel + facture qui casse + 4 précédentes      │
+  │   Output : script v_n+1 qui marche pour les 5                    │
+  │   Test : sur rolling window 5                                    │
+  └─────────────────────────────┬────────────────────────────────────┘
+                                │
+            ┌───────────────────┴───────────────────┐
+            │                                       │
+   ┌────────▼─────────┐                  ┌──────────▼─────────┐
+   │ Réparation OK    │                  │ Réparation KO     │
+   │ → script v_n+1   │                  │ → FALLBACK GEMINI │
+   │   commité Git    │                  │   V6.1 Pro        │
+   │ → drive-push     │                  │ → drive-push      │
+   └──────────────────┘                  └────────────────────┘
+                                              │
+                                              │ Gemini OK
+                                              ▼
+                                    ┌──────────────────────┐
+                                    │  DRIVE OUTBOX        │
+                                    │  + Drive ARCHIVE     │
+                                    │  + Grimoire updated  │
+                                    └──────────────────────┘
+</pre>
+
+<h3>Points-clés du flow</h3>
+
+<ul>
+  <li><strong>Aucun appel LLM "inutile"</strong> : 90 % des factures (top 20 fournisseurs récurrents) passent par script déterministe pur après stabilisation. Le LLM n'intervient que pour Vision split (Flash), création/réparation script (Opus), fallback (Pro).</li>
+  <li><strong>L'agent Sonnet pilote</strong> ce flow via le SKILL <code>lisa-extraction</code>. Il n'exécute pas, il décide quelle commande CLI appeler.</li>
+  <li><strong>Sortie Drive triple</strong> : Outbox (JSON pour EDI), Archive (PDF original traité), et grimoire enrichi (leçons capitalisées).</li>
+</ul>
+</section>
+
+
+<section id="s5">
+<h2><span class="num">5</span> Étape Sanitize (sécurité PDF)</h2>
+
+<p>Avant TOUTE étape d'analyse (Vision split, extraction, etc.), le PDF entrant subit un sanitize obligatoire. C'est une étape de défense en profondeur : le PDF vient d'une Inbox Drive accessible aux déclarants SIFA et potentiellement à des envoyeurs externes par rebond mail. On ne le donne pas à un LLM ou à un script Python tant qu'il n'est pas désinfecté.</p>
+
+<h3>Pourquoi cette étape</h3>
+
+<table>
+  <tr><th>Risque PDF brut</th><th>Mitigation sanitize</th></tr>
+  <tr><td>JavaScript embarqué (PDF JS) qui pourrait exploiter PyMuPDF ou un renderer</td><td><code>qpdf --decrypt --object-streams=generate --remove-restrictions</code> + suppression des actions JS</td></tr>
+  <tr><td>Formulaires AcroForm avec actions cachées</td><td><code>qpdf</code> aplatit le PDF en sortie</td></tr>
+  <tr><td>Métadonnées EXIF / XMP fuitant des infos sensibles (auteur réel, GPS, etc.)</td><td><code>exiftool -all= -overwrite_original</code> strip tout</td></tr>
+  <tr><td>PDF chiffré / password-protected qui bloquerait l'extraction</td><td><code>qpdf --decrypt</code> retire le password si vide ; sinon escalade en quarantaine "encrypted"</td></tr>
+  <tr><td>PDF malformé (structure cassée) qui ferait planter PyMuPDF</td><td><code>qpdf --linearize</code> reconstruit une structure propre, échoue clairement si réparation impossible</td></tr>
+  <tr><td>Bombes PDF (taille décompressée énorme, nested streams)</td><td>Cap taille fichier 50 MB ; cap pages 100 ; <code>qpdf</code> détecte les anomalies de structure</td></tr>
+  <tr><td>Polices embarquées avec exploits de parser</td><td><code>qpdf</code> normalise les flux de polices</td></tr>
+</table>
+
+<h3>Pipeline exact (3 passes)</h3>
+
+<pre class="ascii">
+  INPUT  : /opt/lisa/inbox/&lt;name&gt;.pdf  (PDF brut depuis Drive)
+                              │
+                              ▼
+  ┌────────────────────────────────────────────────────────┐
+  │  PASSE 1 — Garde-fous bornes                           │
+  │  - taille fichier ≤ 50 MB                              │
+  │  - nombre pages ≤ 100 (heuristique fitz.open)          │
+  │  - SI dépassement → quarantine "oversized"             │
+  └────────────────────┬───────────────────────────────────┘
+                       │
+                       ▼
+  ┌────────────────────────────────────────────────────────┐
+  │  PASSE 2 — qpdf                                        │
+  │  qpdf --decrypt --object-streams=generate              │
+  │       --remove-restrictions                            │
+  │       --linearize                                      │
+  │       &lt;input&gt; &lt;tmp1&gt;                                   │
+  │  - SI exit code ≠ 0 ET pas password → quarantine       │
+  │    "qpdf_repair_failed"                                │
+  │  - SI password set → tente vide, sinon quarantine      │
+  │    "encrypted_unknown_password"                        │
+  └────────────────────┬───────────────────────────────────┘
+                       │
+                       ▼
+  ┌────────────────────────────────────────────────────────┐
+  │  PASSE 3 — exiftool                                    │
+  │  exiftool -all= -overwrite_original &lt;tmp1&gt;             │
+  │  Retire toutes les métadonnées EXIF, XMP, IPTC, GPS    │
+  └────────────────────┬───────────────────────────────────┘
+                       │
+                       ▼
+  OUTPUT : /opt/lisa/processing/&lt;name&gt;.pdf  (PDF safe)
+           + sha256 du PDF safe (pour idempotence + audit)
+</pre>
+
+<h3>Commandes exactes</h3>
+
+<pre><code>#!/usr/bin/env bash
+# Pseudocode équivalent au module Python lisa_pipeline/sanitize.py
+
+INPUT="/opt/lisa/inbox/${FILENAME}"
+TMP1=$(mktemp --suffix=.pdf)
+OUTPUT="/opt/lisa/processing/${FILENAME}"
+
+# Passe 2 : qpdf
+qpdf   --decrypt   --object-streams=generate   --remove-restrictions   --linearize   --warning-exit-0   "${INPUT}" "${TMP1}"   || { echo "qpdf_repair_failed"; exit 2; }
+
+# Passe 3 : exiftool
+exiftool -all= -overwrite_original "${TMP1}"   || { echo "exiftool_failed"; exit 3; }
+
+mv "${TMP1}" "${OUTPUT}"
+sha256sum "${OUTPUT}"</code></pre>
+
+<h3>Cas d'échec → quarantaine technique</h3>
+
+<table>
+  <tr><th>Code</th><th>Cause</th><th>Action</th></tr>
+  <tr><td><code>oversized</code></td><td>Fichier &gt; 50 MB ou pages &gt; 100</td><td>Quarantine + alerte Telegram. Possible vraie facture massive ou bombe PDF — Kevin tranche.</td></tr>
+  <tr><td><code>encrypted_unknown_password</code></td><td>PDF chiffré avec password non vide</td><td>Quarantine + alerte. Le déclarant doit fournir un PDF non chiffré.</td></tr>
+  <tr><td><code>qpdf_repair_failed</code></td><td>Structure PDF corrompue irréparable</td><td>Quarantine + alerte. Demande de réémission.</td></tr>
+  <tr><td><code>exiftool_failed</code></td><td>Très rare (binaire absent ou fichier en lecture seule)</td><td>Quarantine + alerte technique à Kevin (problème infra, pas métier)</td></tr>
+</table>
+
+<h3>Validation après sanitize</h3>
+
+<p>Avant de passer le PDF à Vision Flash, LISA vérifie :</p>
+
+<ul>
+  <li><code>fitz.open(output_pdf)</code> ne lève pas d'exception</li>
+  <li><code>page_count ≥ 1</code></li>
+  <li><code>get_text("text", clip=fitz.INFINITE_RECT())</code> sur p.1 retourne un string (même vide, mais pas d'erreur)</li>
+  <li>Pas de mot-clé JavaScript résiduel dans le contenu brut (<code>/JS</code>, <code>/JavaScript</code>, <code>/AA</code>, <code>/OpenAction</code>) — si présent, quarantine "js_residual" malgré qpdf</li>
+</ul>
+
+<h3>Idempotence et déduplication</h3>
+
+<p>Le sha256 du PDF safe est calculé et stocké dans la queue. Si le même hash apparaît à nouveau dans l'Inbox (re-dépôt accidentel par un déclarant), LISA détecte le doublon et n'extrait qu'une fois. Le 2e dépôt est archivé directement avec un tag <code>duplicate_of: &lt;original_id&gt;</code>.</p>
+
+<div class="box info">
+  <div class="label">Implémentation</div>
+  <p>Module Python : <code>lisa_pipeline/sanitize.py</code> (existe déjà, à enrichir avec les passes 1 et 3 si pas complètes). CLI : <code>python3 -m lisa_pipeline sanitize &lt;input&gt; &lt;output&gt;</code>. Sortie JSON :</p>
+  <pre><code>{
+  "success": true,
+  "output_path": "/opt/lisa/processing/&lt;name&gt;.pdf",
+  "sha256": "abc123...",
+  "page_count": 4,
+  "file_size_bytes": 234567,
+  "duplicate_of": null,
+  "error_code": null
+}</code></pre>
+</div>
+
+<h3>Place dans le flow global</h3>
+
+<p>Le sanitize est la <strong>2e étape après la sortie de queue</strong>, juste avant l'envoi à Vision Flash. Le diagramme global (§4) le matérialise. Tout PDF qui sort de la queue passe par sanitize sans exception — même les PDF natifs apparemment "propres", car la défense en profondeur ne dépend pas du type de document.</p>
+
+<div class="box decision">
+  <div class="label">Décision actée</div>
+  <p>Le sanitize est <strong>obligatoire et systématique</strong>, jamais court-circuité, même pour les fournisseurs récurrents. Coût négligeable (~50 ms par PDF), bénéfice sécurité énorme. La seule optimisation : si sha256 déjà connu (déduplication), on saute directement à la décision "duplicate_of" sans rejouer le sanitize.</p>
+</div>
+</section>
+
+<section id="s6">
+<h2><span class="num">6</span> Étape Vision split (Gemini Flash)</h2>
+
+<h3>Pourquoi cette étape</h3>
+
+<p>~10 % des PDF entrants contiennent plusieurs factures de fournisseurs différents (mail groupé, scan en bloc, dossier de transit). Avant toute extraction structurée, LISA doit :</p>
+
+<ol>
+  <li>Détecter si c'est bien une facture (sinon quarantaine)</li>
+  <li>Compter le nombre de factures distinctes dans le document</li>
+  <li>Identifier les fournisseurs et numéros de chaque facture</li>
+  <li>Vérifier la complétude (manque dernière page → quarantaine)</li>
+  <li>Splitter en N PDF nommés <code>FOURNISSEUR_N°FACTURE.pdf</code></li>
+</ol>
+
+<h3>Choix Gemini 3 Flash (vs Pro)</h3>
+
+<div class="box decision">
+  <div class="label">Décision actée</div>
+  <p>Gemini 3 Flash Preview suffit pour cette tâche : analyse visuelle haut niveau sans extraction fine. Coût ~10× inférieur à Gemini 3.1 Pro. Modèle : <code>gemini-3-flash-preview</code> via Vertex AI (service account <code>lisa-496301</code>).</p>
+</div>
+
+<h3>Prompt système (1 seul appel par PDF)</h3>
+
+<pre><code>Tu analyses un PDF qui peut contenir une ou plusieurs factures commerciales.
+
+Pour ce document, indique :
+- Le nombre de factures distinctes
+- Pour chaque facture : nom fournisseur, numéro de facture, plage de pages, complétude
+
+Réponse au format strict, une ligne par facture :
+&lt;FOURNISSEUR&gt;_&lt;N°FACTURE&gt; (COMPLETE|INCOMPLETE) Page &lt;X&gt; à &lt;Y&gt;
+
+Règles :
+- FOURNISSEUR en MAJUSCULES, espaces remplacés par _, accents retirés
+- N°FACTURE : tel qu'imprimé, caractères spéciaux (/, -, .) préservés
+- COMPLETE = total HT lisible + au moins 1 ligne produit + cohérence pagination
+- INCOMPLETE = manque total / manque dernière page / pas de ligne produit
+- Si le document n'est PAS une facture : réponds uniquement NOT_INVOICE
+- Si le document est une facture mais sans aucun produit détaillé : NO_PRODUCTS
+
+Exemples :
+  BERTRAND_EXPORT_FAC65447 (COMPLETE) Page 1 à 4
+  AMAZON_AU_65425-001 (INCOMPLETE) Page 6 à 8</code></pre>
+
+<h3>Convention nommage</h3>
+
+<table>
+  <tr><th>Élément</th><th>Règle</th><th>Exemple input → output</th></tr>
+  <tr><td>Casse</td><td>MAJUSCULES partout</td><td><code>Bertrand Export</code> → <code>BERTRAND_EXPORT</code></td></tr>
+  <tr><td>Espaces</td><td>Remplacés par <code>_</code></td><td><code>AUTO PIECES</code> → <code>AUTO_PIECES</code></td></tr>
+  <tr><td>Accents</td><td>Retirés (NFD strip)</td><td><code>CITROËN</code> → <code>CITROEN</code></td></tr>
+  <tr><td>Caractères spéciaux du n°</td><td>Préservés</td><td><code>FAC.2025/0451</code> reste tel quel</td></tr>
+  <tr><td>Séparateur fournisseur/n°</td><td><code>_</code></td><td><code>BERTRAND_EXPORT_FAC65447</code></td></tr>
+</table>
+
+<h3>Décisions de routage</h3>
+
+<table>
+  <tr><th>Réponse Gemini Flash</th><th>Action LISA</th></tr>
+  <tr><td><code>NOT_INVOICE</code></td><td>Quarantaine + alerte Telegram "Document non identifié comme facture : &lt;nom&gt;"</td></tr>
+  <tr><td><code>NO_PRODUCTS</code></td><td>Quarantaine + alerte Telegram "Facture sans détail produits : &lt;nom&gt;"</td></tr>
+  <tr><td>Au moins 1 ligne <code>INCOMPLETE</code></td><td>La facture incomplète part en quarantaine ; les COMPLETE continuent le flow</td></tr>
+  <tr><td>Toutes <code>COMPLETE</code></td><td>Split en N PDF, chacun entre dans la queue à son tour</td></tr>
+</table>
+
+<div class="box info">
+  <div class="label">Implémentation</div>
+  <p>Module Python : <code>lisa_pipeline/vision_splitter.py</code>. Commande CLI : <code>python3 -m lisa_pipeline vision-split &lt;pdf&gt;</code>. Sortie JSON :</p>
+  <pre><code>{
+  "status": "split" | "quarantine" | "single",
+  "invoices": [
+    {"name": "BERTRAND_EXPORT_FAC65447", "pages": [1,2,3,4], "complete": true, "output_pdf": "/path/..."}
+  ],
+  "quarantine_reason": null,
+  "vision_tokens_used": 1247
+}</code></pre>
+</div>
+</section>
+
+
+<section id="s7">
+<h2><span class="num">7</span> Identité fournisseur autonome</h2>
+
+<p>Le nom du fournisseur extrait par Vision peut varier entre factures (typos OCR, raison sociale changeante, suffixes sociaux). LISA dédoublonne automatiquement, sans intervention humaine sauf cas ambigu.</p>
+
+<h3>Stratégie en 3 étages</h3>
+
+<pre class="ascii">
+  ┌─────────────────────────────────────────────────────────┐
+  │  ÉTAGE 1 — SLUG DÉTERMINISTE                            │
+  │  • lowercase                                            │
+  │  • retire suffixes sociaux (SARL, SAS, LTD, GmbH, …)    │
+  │  • retire ponctuation (. , ' ")                         │
+  │  • retire accents (NFD strip combining marks)           │
+  │  • espaces → _                                          │
+  │  Ex : "Citroën Automobiles S.A." → "citroen_automobiles"│
+  └────────────────────────┬────────────────────────────────┘
+                           │
+                           ▼
+  ┌─────────────────────────────────────────────────────────┐
+  │  ÉTAGE 2 — EMBEDDING SQLITE-VEC                         │
+  │  • Calcul embedding du nom normalisé via Haiku/local    │
+  │  • Compare aux fournisseurs existants du catalogue      │
+  │  • Cosine similarity                                    │
+  └────────────────────────┬────────────────────────────────┘
+                           │
+            ┌──────────────┼──────────────┐
+            │              │              │
+       cos &gt; 0.92      0.75-0.92     cos &lt; 0.75
+            │              │              │
+            ▼              ▼              ▼
+       Fusion auto    Flag REVIEW    Nouveau
+       Alias ajouté   Telegram Kevin fournisseur
+                      → boutons      créé
+                      OK / NON
+</pre>
+
+<h3>Stockage des aliases</h3>
+
+<p>Le catalogue d'un fournisseur conserve tous les noms-source vus, dans <code>meta.yaml</code> :</p>
+
+<pre><code>supplier_canonical: "BERTRAND EXPORT"
+slug: "bertrand_export"
+aliases:
+  - "BERTRAND EXPORT"
+  - "BERTRAND EXPORT SARL"
+  - "Bertrand Export S.A.R.L."
+  - "BERTRAND EXP."
+created_at: "2026-03-12T08:22:01+11:00"
+last_seen: "2026-05-15T14:45:11+11:00"
+embedding: [0.234, -0.112, ...]   # 384 dim, recalculé sur le canonical</code></pre>
+
+<h3>Cas review humaine (zone 0.75-0.92)</h3>
+
+<p>Message Telegram envoyé à Kevin avec boutons inline :</p>
+
+<pre><code>Nouveau nom détecté : "BERTRAND EXPORT EUROPE"
+Similarité 0.84 avec "BERTRAND_EXPORT" (existant).
+
+Fusionner les deux ?
+
+[ Oui, alias ]   [ Non, nouveau fournisseur ]</code></pre>
+
+<p>La réponse de Kevin est enregistrée comme leçon dans le grimoire (catégorie <code>extraction_quirk</code>) pour affiner les futurs jugements automatiques.</p>
+
+<div class="box info">
+  <div class="label">Implémentation</div>
+  <p>Module Python : <code>lisa_pipeline/supplier_identity.py</code>. Commandes CLI :</p>
+  <ul>
+    <li><code>python3 -m lisa_pipeline identify-supplier "&lt;raw_name&gt;"</code> → renvoie <code>{slug, status: "matched"|"new"|"review", alias_added?: bool, similarity?: float}</code></li>
+    <li><code>python3 -m lisa_pipeline supplier-merge &lt;slug_existant&gt; "&lt;new_alias&gt;"</code> → décision Kevin "fusionner"</li>
+    <li><code>python3 -m lisa_pipeline supplier-create "&lt;new_name&gt;"</code> → décision Kevin "nouveau"</li>
+  </ul>
+</div>
+</section>
+
+<section id="s8">
+<h2><span class="num">8</span> Catalogue par fournisseur</h2>
+
+<p>Le catalogue est l'élément central de LISA : il capitalise tout ce qui est appris sur un fournisseur (historique, scripts, règles métier, santé). Versionné via Git (push quotidien 23h vers repo privé GitHub SIFA).</p>
+
+<h3>Arborescence disque</h3>
+
+<pre class="ascii">
+/opt/lisa/catalogue/
+└── bertrand_export/                  # un dossier par fournisseur
+    ├── meta.yaml                     # identité + aliases + business_rules + health
+    ├── method_natif.py               # script PDF natif (optionnel)
+    ├── method_scan_propre.py         # script scan OCR clean (optionnel)
+    ├── method_scan_difficile.py      # script scan dégradé (optionnel)
+    ├── samples/
+    │   ├── natif/
+    │   │   ├── 2026-04-12_FAC65440.pdf
+    │   │   ├── 2026-04-12_FAC65440.json     # golden
+    │   │   ├── 2026-04-23_FAC65445.pdf
+    │   │   ├── 2026-04-23_FAC65445.json
+    │   │   └── ...                          # max 5, FIFO
+    │   ├── scan_propre/
+    │   └── scan_difficile/
+    └── history.yaml                  # journal des réparations + tests
+</pre>
+
+<h3>Structure <code>meta.yaml</code> complète</h3>
+
+<pre><code>supplier_canonical: "BERTRAND EXPORT"
+slug: "bertrand_export"
+aliases:
+  - "BERTRAND EXPORT"
+  - "BERTRAND EXPORT SARL"
+created_at: "2026-03-12T08:22:01+11:00"
+last_seen: "2026-05-15T14:45:11+11:00"
+embedding: [0.234, -0.112, ...]
+
+# Scripts par type de document (0 à 3)
+methods:
+  natif:
+    script: method_natif.py
+    version: v4
+    rolling_window:
+      - { date: "2026-05-10", facture: "FAC65441", outcome: "ok",      confidence: 1.00 }
+      - { date: "2026-05-11", facture: "FAC65442", outcome: "ok",      confidence: 1.00 }
+      - { date: "2026-05-12", facture: "FAC65443", outcome: "ok",      confidence: 1.00 }
+      - { date: "2026-05-13", facture: "FAC65444", outcome: "ok",      confidence: 1.00 }
+      - { date: "2026-05-14", facture: "FAC65445", outcome: "partial", confidence: 0.65 }
+    health_score: 0.93
+    sealed_at: "2026-05-13T18:00:00+11:00"
+    drift_alert: true
+    last_repair: "2026-05-04T10:12:00+11:00"
+  scan_propre:
+    script: method_scan_propre.py
+    version: v2
+    rolling_window: [ ... ]
+    health_score: 0.98
+  scan_difficile: null   # pas encore de script pour ce type
+
+# Règles métier déclarant (saisies via vue GAS "Instructions")
+business_rules:
+  - id: "br-001"
+    rule: "Les produits alimentaires type saucisson : quantité en mètres linéaires, pas en unités."
+    added_by: "declarant.alice"
+    added_at: "2026-04-02T09:15:00+11:00"
+    active: true
+  - id: "br-002"
+    rule: "Le code HS pour les pneus est toujours en colonne 7, pas en colonne 4."
+    added_by: "declarant.bob"
+    added_at: "2026-04-18T11:00:00+11:00"
+    active: true
+
+# Stats agrégées
+total_invoices_seen: 47
+total_invoices_success: 45
+total_invoices_quarantine: 2
+total_repairs: 3
+total_gemini_fallbacks: 1</code></pre>
+
+<h3>Lifecycle d'un fournisseur dans le catalogue</h3>
+
+<table>
+  <tr><th>État</th><th>Déclencheur</th><th>Conséquence</th></tr>
+  <tr><td><strong>Création</strong></td><td>1ère facture jamais vue</td><td>Création <code>meta.yaml</code> + dossier <code>samples/&lt;type&gt;/</code></td></tr>
+  <tr><td><strong>Seed</strong></td><td>1ère facture, pas de script</td><td>Opus 4.7 génère <code>method_&lt;type&gt;.py v1</code> à partir de 1 sample</td></tr>
+  <tr><td><strong>Ajustement</strong></td><td>Facture 2-4, script échoue</td><td>Opus reprend script + factures cumulées, génère v_n+1</td></tr>
+  <tr><td><strong>Stabilisation</strong></td><td>5 factures consécutives OK</td><td><code>sealed_at</code> rempli, <code>health_score ≥ 0.95</code></td></tr>
+  <tr><td><strong>Drift mineur</strong></td><td>Facture casse, health 0.60-0.95</td><td>Réparation Opus sur 6 dernières (5 + nouvelle)</td></tr>
+  <tr><td><strong>Drift majeur</strong></td><td>Facture casse, health &lt; 0.60</td><td>Réparation Opus from-near-scratch</td></tr>
+  <tr><td><strong>Nouveau type</strong></td><td>Facture d'un type non encore vu</td><td>Création d'un 2ème ou 3ème script <code>method_&lt;type&gt;.py</code></td></tr>
+</table>
+</section>
+
+<section id="s9">
+<h2><span class="num">9</span> Types de documents</h2>
+
+<p>Avant de chercher le bon script, LISA classifie automatiquement le type de document : natif, scan propre, scan difficile. C'est ce qui détermine la pile OCR appliquée et le script à utiliser.</p>
+
+<h3>Critères de classification</h3>
+
+<table>
+  <tr><th>Type</th><th>Critère technique</th><th>OCR appliqué</th></tr>
+  <tr>
+    <td><strong>natif</strong></td>
+    <td>PyMuPDF <code>extract_text()</code> retourne &gt; <strong>500 caractères</strong> avec layout cohérent (au moins 3 lignes, présence de chiffres)</td>
+    <td>Aucun OCR — texte natif PyMuPDF + PyMuPDF4LLM pour structure</td>
+  </tr>
+  <tr>
+    <td><strong>scan_propre</strong></td>
+    <td>PyMuPDF retourne ≤ 500 chars, ET Tesseract <code>avg_confidence ≥ 75 %</code> sur la page de couverture</td>
+    <td>Tesseract <code>--psm 6 --oem 1 --lang fra+eng</code></td>
+  </tr>
+  <tr>
+    <td><strong>scan_difficile</strong></td>
+    <td>PyMuPDF retourne ≤ 500 chars, ET Tesseract <code>avg_confidence &lt; 75 %</code></td>
+    <td>OpenCV preprocessing (deskew + contrast boost) + Tesseract retry. Si toujours &lt; 60 %, escalade fallback Gemini</td>
+  </tr>
+</table>
+
+<div class="box info">
+  <div class="label">Curseurs ajustables</div>
+  <p>Les seuils 500 chars et 75 % de confiance Tesseract sont des valeurs de démarrage. À ajuster après les premiers retours prod selon le taux de mauvaise classification.</p>
+</div>
+
+<h3>Pré-traitement spécifique scan_difficile</h3>
+
+<p>Quand un document est classé <code>scan_difficile</code>, le module <code>script_runner.py</code> applique avant tout OCR :</p>
+
+<ol>
+  <li><strong>Conversion en image</strong> par page (PyMuPDF, 300 DPI)</li>
+  <li><strong>Deskew</strong> via <code>cv2.minAreaRect</code> sur les contours principaux</li>
+  <li><strong>Binarisation adaptative</strong> (Otsu si contraste OK, sinon Sauvola)</li>
+  <li><strong>Débruitage</strong> léger (<code>cv2.fastNlMeansDenoising</code>)</li>
+  <li><strong>Tesseract</strong> avec <code>--psm 6 --oem 1 --lang fra+eng</code></li>
+  <li><strong>Score de confiance global</strong> — si toujours &lt; 60 %, on n'essaie même pas le script, escalade directe Gemini</li>
+</ol>
+
+<h3>Réutilisation du pré-traitement (Phase 2)</h3>
+
+<div class="box warn">
+  <div class="label">Phase 2 — pas dans la livraison 3</div>
+  <p>Si LISA détecte qu'un chaînage de pré-traitement spécifique tourne avec succès &gt;3 fois pour un fournisseur, elle pourra (en phase 2) matérialiser ce chaînage en pipeline réutilisable dans <code>/opt/lisa/pipelines/auto_generated/</code>. La livraison 3 reste sur le pipeline figé décrit ci-dessus.</p>
+</div>
+</section>
+
+<section id="s10">
+<h2><span class="num">10</span> Logique de réparation des scripts</h2>
+
+<h3>Principe simple</h3>
+
+<div class="box decision">
+  <div class="label">Décision actée</div>
+  <p>LISA ne fait pas de "calibration" générique. Elle <strong>répare</strong> des scripts existants. Le seul cas où elle crée un script from-scratch est la <em>1ère facture jamais vue</em> d'un fournisseur (seed Opus sur 1 sample).</p>
+  <p>Pas de quota journalier de réparations. Le coût Opus est compensé largement par les économies sur les ~95 % de factures qui passent par script déterministe.</p>
+</div>
+
+<h3>Algorithme</h3>
+
+<pre class="ascii">
+INPUT  : facture courante F + slug fournisseur + type t
+
+1. Charger script_actuel = catalogue[slug].methods[t].script
+2. Appliquer script_actuel(F) → invoice_json
+3. Si validate_math(invoice_json) == OK :
+       → drive-push(invoice_json), END
+4. Sinon :
+   a. Tester les AUTRES scripts du même fournisseur (types ≠ t)
+      → s'il y en a un qui marche, on bascule (probable erreur de classify)
+   b. Si aucun ne marche :
+      → Charger 4 factures précédentes du même (slug, t) depuis samples/
+      → samples_set = [F, F-1, F-2, F-3, F-4]
+      → Appeler Opus 4.7 avec :
+          * script_actuel
+          * samples_set
+          * grimoire.query(supplier=slug, category="business_rule")
+          * grimoire.query(supplier=slug, category="extraction_quirk")
+          * Prompt "Génère un script déterministe qui marche pour ces 5 factures"
+      → script_candidat = Opus.generate()
+      → Tester script_candidat sur samples_set ENTIER
+          * Si OK sur 5/5 :
+              - script_actuel → version archivée
+              - script_candidat → catalogue[slug].methods[t].script v_n+1
+              - commit Git, capitalisation grimoire
+              - drive-push(script_candidat(F))
+              - END
+          * Si KO sur ≥ 1 :
+              → FALLBACK GEMINI V6.1, capitalisation échec dans grimoire
+</pre>
+
+<h3>Cas particulier : 1ère facture d'un fournisseur nouveau</h3>
+
+<pre class="ascii">
+INPUT  : facture F + slug = "nouveau_fournisseur" (créé à l'instant)
+
+1. catalogue[slug].methods[t] == null
+2. Appeler Opus 4.7 SEED avec :
+     * samples_set = [F]   (1 seule)
+     * Prompt "Génère un script seed pour cette facture, robuste aux variations"
+3. script_seed = Opus.generate()
+4. Tester sur F seul → si OK, drive-push, sample stocké
+5. Si KO → FALLBACK GEMINI (1ère facture, pas de capitalisation suffisante)
+
+   → Facture 2 du même fournisseur : on a maintenant 2 samples,
+     on applique script_seed, si KO → Opus reprend sur 2 samples,
+     etc.
+</pre>
+
+<h3>Contenu du prompt Opus 4.7 (squelette)</h3>
+
+<pre><code>SYSTEM :
+Tu es un générateur expert de scripts Python d'extraction de factures
+douanières au schéma SYDONIA V6.1. Tu produis du code déterministe utilisant
+des positions strictes, des regex, des positions de blocs de mots en abscisse
+et ordonnée. Tu utilises l'OCR la plus adaptée au type de document.
+
+CONTRAINTES :
+- Le script DOIT marcher sur les 5 factures samples fournies (math + schéma)
+- Imports allowlistés : pymupdf, cv2, pytesseract, pdfminer, pandas, re, pathlib
+- Pas de os.system, requests, eval, exec
+- Output strict : un dict Python conforme au schéma V6.1 (header + lines)
+
+INPUT :
+- script_actuel (Python, version v_n)
+- samples_set : 5 PDF + leur JSON golden attendu
+- business_rules pour ce fournisseur (issues du grimoire) :
+    "Les produits alimentaires type saucisson : qty en mètres linéaires"
+- extraction_quirks pour ce fournisseur :
+    "Le total HT est précédé par 'Net to pay' et non 'Total HT'"
+
+OUTPUT :
+Un script Python complet entre balises &lt;script&gt;...&lt;/script&gt;</code></pre>
+
+<div class="box info">
+  <div class="label">Caching pour Opus</div>
+  <p>2 breakpoints <code>cache_control</code> : (1) sur le SYSTEM prompt stable, (2) sur la 5e facture (rolling window — change uniquement quand nouvelle facture arrive). TTL 1h. Économise ~85 % du coût input Opus.</p>
+</div>
+</section>
+
+<section id="s11">
+<h2><span class="num">11</span> Health score décroissant</h2>
+
+<h3>Principe</h3>
+
+<p>Un script n'est <strong>jamais définitivement scellé</strong>. Sa fiabilité est mesurée en continu sur les 5 dernières factures. Si elle décroche, LISA relance automatiquement la réparation.</p>
+
+<h3>Calcul</h3>
+
+<pre><code>health_score = somme(confidence_i pour i in rolling_window) / 5
+
+où confidence_i ∈ [0.0, 1.0] selon le résultat de la facture i :
+  outcome == "ok"        → confidence = 1.00
+  outcome == "partial"   → confidence = 0.50 + 0.50 × (lines_extracted / lines_expected)
+  outcome == "fail"      → confidence = 0.00
+  outcome == "quarantine"→ ignoré dans le calcul (n'entre pas dans la window)</code></pre>
+
+<h3>Seuils de décision</h3>
+
+<table>
+  <tr><th>Plage health</th><th>État</th><th>Action</th></tr>
+  <tr><td><code>≥ 0.95</code></td><td>Scellé</td><td>Pas de nouvelle réparation. Script utilisé en confiance.</td></tr>
+  <tr><td><code>0.80 — 0.94</code></td><td>Acceptable</td><td>Script utilisé. Pas de réparation automatique mais alerte si une facture casse.</td></tr>
+  <tr><td><code>0.60 — 0.79</code></td><td>Drift mineur</td><td>Réparation Opus à la prochaine facture qui échoue.</td></tr>
+  <tr><td><code>&lt; 0.60</code></td><td>Drift majeur</td><td>Réparation Opus immédiate, on ne tente même pas la facture courante avec le script existant.</td></tr>
+</table>
+
+<h3>Rolling window FIFO 5</h3>
+
+<p>À chaque nouvelle facture traitée :</p>
+
+<ol>
+  <li>L'entrée la plus ancienne sort de la window</li>
+  <li>La nouvelle entrée entre en queue</li>
+  <li><code>health_score</code> est recalculé</li>
+  <li>Si seuil franchi → action correspondante déclenchée</li>
+</ol>
+
+<h3>Que reste-t-il des anciennes factures hors window ?</h3>
+
+<ul>
+  <li><strong>PDF original</strong> : déjà déplacé vers Drive ARCHIVE après traitement initial. Pas conservé en local.</li>
+  <li><strong>JSON extrait validé</strong> : commit Git du catalogue (push quotidien 23h). Restauration possible si besoin.</li>
+  <li><strong>Métadonnées</strong> : <code>history.yaml</code> conserve une trace courte (date, facture, outcome) au-delà de la window pour audit.</li>
+</ul>
+
+<div class="box info">
+  <div class="label">Implémentation</div>
+  <p>Le health_score est calculé dans <code>lisa_pipeline/catalogue.py</code>, fonction <code>compute_health(slug, type)</code>. Persisté dans <code>meta.yaml</code> après chaque mise à jour.</p>
+</div>
+</section>
+
+
+<section id="s12">
+<h2><span class="num">12</span> Fallback Gemini V6.1</h2>
+
+<h3>Quand exactement</h3>
+
+<p>Le fallback Gemini 3.1 Pro avec le prompt V6.1 n'est appelé que dans des cas précis et minoritaires :</p>
+
+<table>
+  <tr><th>Cas</th><th>Pourquoi Gemini</th></tr>
+  <tr><td>Réparation Opus a échoué</td><td>Le script généré ne valide pas sur les 5 samples → mise en page trop atypique</td></tr>
+  <tr><td>1ère facture nouveau fournisseur, seed Opus a échoué</td><td>Pas assez de contexte pour générer un script déterministe</td></tr>
+  <tr><td>Document <code>scan_difficile</code> avec confiance Tesseract &lt; 60 %</td><td>OCR trop dégradé pour un script regex/positionnel</td></tr>
+  <tr><td>Fournisseur marqué <code>non_calibrable: true</code> dans <code>meta.yaml</code></td><td>Mise en page si exotique qu'aucun script déterministe ne marche (mise en page manuscrite, facture-photo, etc.)</td></tr>
+</table>
+
+<h3>Prompt V6.1 — caractéristiques</h3>
+
+<p>Le prompt système V6.1 est éprouvé en production manuelle avec les déclarants SIFA. Résultats satisfaisants. Il est stocké dans <code>prompts/lisa_gemini_v6_1.txt</code> en repo, versionné, et chargé via <code>open(..., "rb")</code> pour garantir le byte-stability nécessaire au caching implicit Gemini.</p>
+
+<h4>Règles absolues du V6.1</h4>
+
+<ul>
+  <li><code>SILENCE_JSON</code> : sortie strictement JSON, aucun texte avant/après</li>
+  <li><code>JSON_PURITY</code> : valeurs mono-ligne, RFC 8259 strict</li>
+  <li><code>OMIT_EMPTY_FIELDS</code> : champs vides omis (pas null, pas <code>""</code>)</li>
+  <li><code>ORIGIN_EU_BAN</code> : jamais "EU"/"UE"/"CEE"/"EEC" — résolution vers ISO2 du pays réel</li>
+  <li><code>NO_SLASH_MUTATION</code> : slashes dans les références produits préservés</li>
+</ul>
+
+<h4>Schéma de sortie</h4>
+
+<pre><code>{
+  "invoices": [
+    {
+      "header": {
+        "date": "AAAA-MM-JJ", "num": "...", "supplier": "...", "recipient": "...",
+        "total_ht": "1234,56", "dossier": "202608",
+        "currency": "EUR" | "USD" | "AUD" | "XPF" | "????",
+        "gross_weight": "48,500", "net_weight": "42,100", "volume": "0,185",
+        "dof": "L'exportateur ... origine préférentielle UE ... critère W",
+        "rex": "FRREX20206701"
+      },
+      "lines": [
+        { "ref": "...", "label": "...", "origin": "FR" | "DE/NP" | "CN",
+          "qty": 8, "amount": "736,72",
+          "unit_price": "92,09", "hs_code": "8507100090",
+          "packages": 2, "ean": "...", "weight": "0,030", "units": 24,
+          "alcohol": "5,00", "sugar": "..." },
+        { "type": "xfee", "ref": "XFEE",
+          "label": "FRAIS EXCLUS - REMISE - ESCOMPTE",
+          "qty": 1, "amount": "-20,00" }
+      ]
+    }
+  ]
+}</code></pre>
+
+<h4>Thinking protocol obligatoire (6 étapes)</h4>
+
+<ol>
+  <li>Contextualisation globale (compter factures, pays expéditeur, mention DOF)</li>
+  <li>Extraction ligne par ligne (cascade ref / origin / classification)</li>
+  <li>Résolution origine EU/UE (jamais "EU" final)</li>
+  <li>Calcul XFEE : <code>XFEE = total_ht − Σ(amount des ProductLine)</code></li>
+  <li>Vérification de cohérence (10 checks)</li>
+  <li>Validation JSON strict RFC 8259</li>
+</ol>
+
+<h3>Capitalisation après fallback Gemini</h3>
+
+<p>Quand Gemini réussit là où un script déterministe échoue, LISA :</p>
+
+<ol>
+  <li>Pousse le JSON Gemini vers Outbox immédiatement</li>
+  <li>Stocke la facture dans <code>samples/&lt;type&gt;/</code> comme golden</li>
+  <li>Si on a maintenant ≥ 2 samples du même fournisseur/type avec Gemini → tente une <strong>nouvelle génération Opus</strong> avec ces samples (peut-être qu'avec 2-3 exemples Gemini, Opus arrive à faire un script déterministe)</li>
+  <li>Ajoute leçon grimoire catégorie <code>extraction_quirk</code> : <em>"Fournisseur X type Y : Gemini réussit où Opus échoue, particularités layout..."</em></li>
+</ol>
+
+<div class="box info">
+  <div class="label">Implémentation</div>
+  <p>Module : <code>lisa_pipeline/gemini_fallback.py</code>. CLI : <code>python3 -m lisa_pipeline gemini-fallback &lt;pdf&gt;</code>. Sortie : JSON SYDONIA + <code>tokens_in</code> / <code>tokens_out</code> / <code>cached_tokens</code> / <code>duration_s</code>.</p>
+</div>
+</section>
+
+<section id="s13">
+<h2><span class="num">13</span> Grimoire RAG (3 catégories)</h2>
+
+<p>Le grimoire est une mémoire vectorielle (sqlite-vec) qui capitalise toutes les leçons apprises au fil de l'eau. Sonnet l'interroge avant chaque décision difficile, Opus le consulte pendant la génération de script.</p>
+
+<h3>Schéma de leçon</h3>
+
+<pre><code>id              : uuid
+supplier_slug   : "bertrand_export" (ou "*" pour règles transverses)
+type            : "natif" | "scan_propre" | "scan_difficile" | "*"
+category        : "extraction_quirk" | "ocr_method" | "business_rule"
+title           : string court
+content         : string libre, en français
+embedding       : vector(384)
+created_at      : ISO 8601
+created_by      : "auto" | "declarant.alice" | "kevin"
+active          : bool
+usage_count     : int (incrémenté à chaque query qui retourne cette leçon)</code></pre>
+
+<h3>Les 3 catégories</h3>
+
+<h4>1. <code>extraction_quirk</code> (auto)</h4>
+
+<p>Particularités layout / patterns / pièges d'extraction découverts en cours de route. Ajoutés automatiquement par l'agent Sonnet ou Opus quand ils résolvent un cas non trivial.</p>
+
+<p>Exemples :</p>
+<ul>
+  <li><em>"Pour BERTRAND EXPORT, le total HT est précédé par 'Net to pay' (anglais), pas 'Total HT' (français)."</em></li>
+  <li><em>"Sur les factures Citroën, la colonne origine peut contenir 'EU' — résoudre via adresse expéditeur (FR)."</em></li>
+  <li><em>"Les références produit du fournisseur ABC contiennent des slashes (WF-2810/30/35/50DWF) qu'il faut préserver intacts."</em></li>
+</ul>
+
+<h4>2. <code>ocr_method</code> (auto)</h4>
+
+<p>Méthodes OCR ou pré-traitement qui ont marché là où les défauts échouaient.</p>
+
+<p>Exemples :</p>
+<ul>
+  <li><em>"ZHANG INDUSTRIES, scan difficile : Tesseract --psm 6 + lang chi_sim+eng bat RapidOCR sur scans CJK basse résolution."</em></li>
+  <li><em>"AUTO PIECES, scan : deskew + binarisation Sauvola (pas Otsu) car contraste très faible."</em></li>
+</ul>
+
+<h4>3. <code>business_rule</code> (manuel via GAS)</h4>
+
+<p>Règles métier saisies par les déclarants SIFA via la vue "Instructions" du dashboard GAS. Elles sont injectées dans le prompt Opus lors de la génération de script ET dans le system prompt Sonnet quand il traite ce fournisseur.</p>
+
+<p>Exemples :</p>
+<ul>
+  <li><em>"Les produits alimentaires type saucisson : quantité exprimée en mètres linéaires, pas en unités."</em></li>
+  <li><em>"Pour ce fournisseur, le code HS dans la colonne 7 est toujours plus fiable que celui en colonne 4."</em></li>
+  <li><em>"Devise par défaut si non précisée sur les factures FR : EUR. Si non précisée sur AU : AUD."</em></li>
+</ul>
+
+<h3>Query patterns</h3>
+
+<pre><code># Avant calibration Opus : récupérer les leçons utiles
+context = grimoire.query(
+    supplier_slug="bertrand_export",
+    type="scan_propre",
+    categories=["extraction_quirk", "business_rule", "ocr_method"],
+    top_k=10,
+    min_similarity=0.7,
+)
+
+# Avant orchestration Sonnet : règles transverses
+context_global = grimoire.query(
+    supplier_slug="*",
+    categories=["business_rule"],
+    top_k=5,
+)</code></pre>
+
+<h3>Maintenance</h3>
+
+<ul>
+  <li><strong>Désactivation</strong> : Kevin peut désactiver une leçon obsolète via <code>python3 -m lisa_pipeline grimoire-deactivate &lt;id&gt;</code> ou via GAS</li>
+  <li><strong>Cleanup</strong> : leçons <code>active: false</code> avec <code>usage_count == 0</code> depuis 6 mois → archivage Git puis suppression</li>
+  <li><strong>Backup</strong> : <code>grimoire.db</code> inclus dans le push Git quotidien</li>
+</ul>
+
+<div class="box info">
+  <div class="label">Implémentation</div>
+  <p>Module : <code>lisa_pipeline/grimoire.py</code>. Schéma sqlite-vec : table <code>lessons</code> + index vectoriel <code>lessons_vec</code>. Embeddings via Haiku 4.5 (model d'embedding séparé Anthropic) ou modèle local si Haiku embedding pas dispo.</p>
+</div>
+</section>
+
+<section id="s14">
+<h2><span class="num">14</span> Quarantaine</h2>
+
+<p>La quarantaine est un cas d'exception. LISA produit toujours un résultat <strong>sauf</strong> quand le document n'est pas une facture exploitable. Trois cas :</p>
+
+<table>
+  <tr><th>Cas</th><th>Détection</th><th>Action</th></tr>
+  <tr><td><strong>Pas une facture</strong></td><td>Vision Flash retourne <code>NOT_INVOICE</code></td><td>Déplace PDF vers <code>/opt/lisa/quarantine/not_invoice/</code> + alerte Telegram</td></tr>
+  <tr><td><strong>Pas de produits détaillés</strong></td><td>Vision Flash retourne <code>NO_PRODUCTS</code></td><td>Déplace PDF vers <code>/opt/lisa/quarantine/no_products/</code> + alerte Telegram</td></tr>
+  <tr><td><strong>Facture incomplète</strong></td><td>Vision Flash retourne <code>(INCOMPLETE)</code> sur au moins une facture</td><td>Déplace PDF vers <code>/opt/lisa/quarantine/incomplete/</code> + alerte Telegram. Si multi-factures, les COMPLETE continuent le flow.</td></tr>
+</table>
+
+<h3>Format alerte Telegram</h3>
+
+<pre><code>⚠ QUARANTAINE — BERTRAND_EXPORT_FAC65447.pdf
+Raison : INCOMPLETE (manque la dernière page selon Vision Flash)
+Pages : 1 à 4 (le total HT n'est pas lisible)
+Action : vérifier le scan ou demander réémission au fournisseur.</code></pre>
+
+<h3>Résolution manuelle (vue GAS "Résolution")</h3>
+
+<p>Kevin (ou un déclarant SIFA via GAS) peut :</p>
+
+<ul>
+  <li><strong>Force-process</strong> : forcer LISA à traiter quand même la facture, malgré l'alerte Vision (utile si Vision se trompe)</li>
+  <li><strong>Reject définitif</strong> : marquer la facture comme rejetée, déplace vers <code>quarantine/rejected/</code>, l'archive existe mais le déclarant SIFA sait qu'il doit demander une réémission</li>
+  <li><strong>Upload de remplacement</strong> : déposer le PDF complet via la vue GAS, LISA reprend le flow normal sur le nouveau fichier</li>
+</ul>
+
+<h3>Cas non couvert par la quarantaine</h3>
+
+<p>Quand un document est une facture complète, mais que LISA n'arrive pas à l'extraire correctement (Vision + script + Gemini tous échouent) → <strong>pas de quarantaine</strong>. LISA produit un JSON <strong>marqué incomplet</strong> et alerte Kevin. Le déclarant doit corriger manuellement via GAS. Ce cas devrait être très rare avec le V6.1 en filet.</p>
+</section>
+
+<section id="s15">
+<h2><span class="num">15</span> Interfaces opérateur</h2>
+
+<h3>Telegram (pilotage agent + alertes)</h3>
+
+<p>Telegram est le canal unique de pilotage en temps réel. User unique whitelisté (<code>dmPolicy: "allowlist"</code> + <code>allowFrom: [&lt;KEVIN_USER_ID&gt;]</code>).</p>
+
+<h4>Commandes slash</h4>
+
+<table>
+  <tr><th>Commande</th><th>Effet</th></tr>
+  <tr><td><code>/status</code></td><td>État courant LISA (queue, factures traitées aujourd'hui, quarantaine)</td></tr>
+  <tr><td><code>/queue</code></td><td>Détail file d'attente</td></tr>
+  <tr><td><code>/pause</code></td><td>Suspend le traitement (laisse la queue se remplir, n'extrait plus)</td></tr>
+  <tr><td><code>/resume</code></td><td>Reprend le traitement</td></tr>
+  <tr><td><code>/logs</code></td><td>20 derniers événements horodatés</td></tr>
+</table>
+
+<h4>Alertes proactives</h4>
+
+<ul>
+  <li><strong>Quarantaine</strong> : à chaque incident (cf. §13)</li>
+  <li><strong>Review identité fournisseur</strong> : flag 0.75-0.92 similarité, boutons inline OK/NON (§6)</li>
+  <li><strong>Quota cooldown</strong> : si plus de 10 réparations Opus en 1h (alerte non-bloquante, info uniquement)</li>
+  <li><strong>Update OpenClaw dispo</strong> : notification quand <code>openclaw update --check</code> détecte une nouvelle version</li>
+  <li><strong>Health score crash</strong> : si un script bascule en drift majeur (&lt; 0.60)</li>
+</ul>
+
+<h3>Google Apps Script — 5 vues</h3>
+
+<table>
+  <tr><th>Vue</th><th>Rôle</th></tr>
+  <tr><td><strong>Tableau de bord</strong></td><td>Coûts cumulés (Anthropic + Google), santé globale, queue, taux de succès, factures du jour</td></tr>
+  <tr><td><strong>Fournisseurs</strong></td><td>Liste catalogue, scripts par type, health_score, last_seen, total_invoices</td></tr>
+  <tr><td><strong>Factures</strong></td><td>Historique + recherche par n° / fournisseur / dossier, JSON outbox lié</td></tr>
+  <tr><td><strong>Instructions</strong></td><td>Saisie des <code>business_rules</code> par fournisseur (déclarants SIFA), versionning, activation/désactivation</td></tr>
+  <tr><td><strong>Résolution</strong></td><td>Quarantaine + cas difficiles, force-process / reject / upload remplacement</td></tr>
+</table>
+
+<h4>Communication GAS ↔ LISA</h4>
+
+<pre class="ascii">
+  ┌─────────────────────────┐
+  │  Google Apps Script     │
+  │  (5 vues + triggers)    │
+  └────────────┬────────────┘
+               │ HTTPS + HMAC signature
+               ▼
+  ┌─────────────────────────┐
+  │  Cloudflare Tunnel      │
+  │  → lisa-api.sifa.nc     │
+  └────────────┬────────────┘
+               │
+               ▼
+  ┌─────────────────────────┐
+  │  FastAPI sur VPS        │
+  │  (uvicorn, loopback)    │
+  └────────────┬────────────┘
+               │ exec CLI lisa_pipeline
+               ▼
+  ┌─────────────────────────┐
+  │  Tools LISA (Python)    │
+  └─────────────────────────┘
+</pre>
+
+<p>L'authentification GAS → FastAPI utilise un HMAC partagé (clé dans sops, jamais en clair). Aucun appel non signé ne passe.</p>
+</section>
+
+<section id="s16">
+<h2><span class="num">16</span> Sécurité OpenClaw</h2>
+
+<p>Sécurité critique : LISA touche des données métier SIFA et exécute du code Python généré dynamiquement. Référence détaillée : <code>docs/connaissanceopenclaw05_2026.md</code> (section 4).</p>
+
+<h3>CVE 2026 à connaître</h3>
+
+<table>
+  <tr><th>CVE</th><th>Nature</th><th>Versions affectées</th><th>Mitigation LISA</th></tr>
+  <tr><td><strong>CVE-2026-25253 « ClawBleed »</strong></td><td>Cross-Site WebSocket Hijacking (CVSS 8.8)</td><td>&lt; 2026.1.29</td><td>Upgrade obligatoire ≥ 2026.5.6, <code>gateway.bind: "loopback"</code></td></tr>
+  <tr><td><strong>CVE-2026-45006</strong></td><td>Improper Access Control sur tool <code>gateway</code> (CVSS 8.8)</td><td>&lt; 2026.4.23</td><td>Upgrade + <code>tools.deny: ["gateway", "cron", "sessions_spawn", "sessions_send"]</code></td></tr>
+  <tr><td><strong>Campagne ClawHavoc</strong></td><td>1 184+ skills malveillants sur ClawHub</td><td>Toutes</td><td>Aucun skill ClawHub installé. <code>agents.list[].skills: ["lisa-*"]</code> uniquement</td></tr>
+</table>
+
+<h3>Baseline de hardening LISA (à coller dans <code>~/.openclaw/openclaw.json</code>)</h3>
+
+<pre><code>{
+  "gateway": {
+    "mode": "local",
+    "bind": "loopback",
+    "auth": { "mode": "token", "token": "${OPENCLAW_GATEWAY_TOKEN}" }
+  },
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "tools": {
+    "profile": "messaging",
+    "deny": ["gateway", "cron", "sessions_spawn", "sessions_send",
+             "group:automation", "group:runtime"],
+    "fs": { "workspaceOnly": true },
+    "exec": {
+      "host": "gateway",
+      "security": "allowlist",
+      "ask": "on-miss",
+      "strictInlineEval": true,
+      "allowlist": [
+        {"match": "python3 -m lisa_pipeline classify *"},
+        {"match": "python3 -m lisa_pipeline vision-split *"},
+        {"match": "python3 -m lisa_pipeline identify-supplier *"},
+        {"match": "python3 -m lisa_pipeline classify-type *"},
+        {"match": "python3 -m lisa_pipeline apply-script *"},
+        {"match": "python3 -m lisa_pipeline repair-script *"},
+        {"match": "python3 -m lisa_pipeline seed-script *"},
+        {"match": "python3 -m lisa_pipeline gemini-fallback *"},
+        {"match": "python3 -m lisa_pipeline validate-math *"},
+        {"match": "python3 -m lisa_pipeline drive-pull *"},
+        {"match": "python3 -m lisa_pipeline drive-push *"},
+        {"match": "python3 -m lisa_pipeline queue-*"},
+        {"match": "python3 -m lisa_pipeline catalogue-*"},
+        {"match": "python3 -m lisa_pipeline grimoire-*"},
+        {"match": "python3 -m lisa_pipeline sanitize *"}
+      ]
+    },
+    "elevated": { "enabled": false }
+  },
+  "plugins": {
+    "autoInstall": false
+  }
+}</code></pre>
+
+<h3>Secrets management via sops</h3>
+
+<p>Tous les secrets (clés API, tokens, credentials GAS) sont stockés chiffrés via sops + age, jamais en clair dans <code>openclaw.json</code> ou en variables d'environnement utilisateur.</p>
+
+<pre><code>/etc/lisa/secrets.enc.json    # chiffré sops/age
+/etc/lisa/openclaw.env        # chmod 600 openclaw:openclaw, lu par systemd EnvironmentFile=
+/etc/lisa/age.key             # clé maître age, chmod 400 root:root</code></pre>
+
+<h3>Audit régulier</h3>
+
+<ul>
+  <li><code>openclaw security audit --deep --fix</code> systématique après chaque mise à jour ou changement de config</li>
+  <li>Échec CI/script bootstrap si finding <code>critical</code></li>
+  <li>Logs JSONL gateway → Loki / Vector (path <code>/var/log/openclaw/</code> recommandé sur Hostinger, sinon tmpfs perdu au reboot)</li>
+  <li>Métriques Prometheus exposées sur <code>/api/diagnostics/prometheus</code> avec bearer token, scrapées par Netdata</li>
+</ul>
+
+<h3>Version cible LISA</h3>
+
+<div class="box danger">
+  <div class="label">À éviter absolument</div>
+  <p>Toute version OpenClaw <strong>2026.4.24 → 2026.4.29</strong> (Rough Week — plugin repair loops, gateways lents, channels dégradés). Si déjà installées, downgrader d'urgence.</p>
+</div>
+
+<div class="box decision">
+  <div class="label">Décision actée</div>
+  <p>Minimum production : <strong>2026.5.6</strong> (hotfix doctor) ou plus récent. Recommandé : <strong>2026.5.7</strong> ou attendre la première LTS annoncée fin mai 2026.</p>
+</div>
+</section>
+
+
+<section id="s17">
+<h2><span class="num">17</span> Prompt caching</h2>
+
+<p>Le caching est un levier de coût majeur pour LISA. Référence détaillée : <code>docs/prompt_caching_05_2026.md</code>.</p>
+
+<h3>Décisions par appel LLM</h3>
+
+<table>
+  <tr><th>Appel</th><th>Caching</th><th>TTL</th><th>Économie estimée</th></tr>
+  <tr><td>Sonnet 4.6 orchestrateur (110/j × 5K tokens)</td><td>Anthropic automatic caching</td><td><strong>1h explicite</strong></td><td>−89 % sur input</td></tr>
+  <tr><td>Opus 4.7 réparation (10/j × 10K + 5 factures)</td><td>2 breakpoints (system + 5e facture)</td><td><strong>1h</strong></td><td>−85 % sur input</td></tr>
+  <tr><td>Haiku 4.5 heartbeat (50/j × 200 tokens)</td><td>Aucun (sous seuil 4 096)</td><td>n/a</td><td>0</td></tr>
+  <tr><td>Gemini 3 Flash split (110/j × 2K)</td><td>Implicit caching auto</td><td>n/a</td><td>−45 % best-effort</td></tr>
+  <tr><td>Gemini 3.1 Pro V6.1 (10/j × 12K)</td><td>Implicit auto (phase 1)</td><td>n/a</td><td>−10 % global</td></tr>
+</table>
+
+<h3>Snippet Anthropic — Sonnet orchestrateur</h3>
+
+<pre><code>import anthropic
+
+client = anthropic.Anthropic()
+
+SYSTEM_PROMPT_LISA = open("prompts/lisa_orchestrator.txt", "rb").read().decode("utf-8")
+
+response = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=2048,
+    system=[
+        {
+            "type": "text",
+            "text": SYSTEM_PROMPT_LISA,
+            "cache_control": {"type": "ephemeral", "ttl": "1h"}
+        }
+    ],
+    messages=[{"role": "user", "content": agent_input}]
+)
+
+# Validation hit ratio
+u = response.usage
+total_input = u.cache_read_input_tokens + u.cache_creation_input_tokens + u.input_tokens
+hit_ratio = u.cache_read_input_tokens / max(total_input, 1)
+logger.info(f"sonnet hit_ratio={hit_ratio:.2%}")</code></pre>
+
+<h3>Snippet Anthropic — Opus réparation (2 breakpoints)</h3>
+
+<pre><code>response = client.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=8192,
+    system=[
+        {
+            "type": "text",
+            "text": CALIBRATION_INSTRUCTIONS,  # ~10K tokens stable
+            "cache_control": {"type": "ephemeral", "ttl": "1h"}
+        }
+    ],
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": pdf_1_b64}},
+            {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": pdf_2_b64}},
+            {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": pdf_3_b64}},
+            {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": pdf_4_b64}},
+            {"type": "document",
+             "source": {"type": "base64", "media_type": "application/pdf", "data": pdf_5_b64},
+             "cache_control": {"type": "ephemeral", "ttl": "1h"}},  # breakpoint sur 5e facture
+            {"type": "text", "text": f"Script actuel :\n{current_script}\n\nGénère un script qui marche pour ces 5 factures."}
+        ]
+    }]
+)</code></pre>
+
+<h3>Snippet Gemini Flash — split</h3>
+
+<pre><code>from google import genai
+from google.oauth2 import service_account
+
+creds = service_account.Credentials.from_service_account_file(
+    "/etc/lisa/secrets/lisa-service-account.json",
+    scopes=["https://www.googleapis.com/auth/cloud-platform"],
+)
+client = genai.Client(
+    vertexai=True,
+    project="lisa-496301",
+    location="us-central1",
+    credentials=creds,
+)
+
+VISION_SPLIT_PROMPT = open("prompts/vision_split.txt", "rb").read().decode("utf-8")
+
+response = client.models.generate_content(
+    model="gemini-3-flash-preview",
+    config={
+        "system_instruction": VISION_SPLIT_PROMPT,
+        "temperature": 0.0,
+    },
+    contents=[
+        {"mime_type": "application/pdf", "data": pdf_bytes},
+        "Analyse ce document selon le format de réponse strict."
+    ]
+)
+
+# Implicit caching automatique si prompt byte-stable</code></pre>
+
+<h3>Pièges à éviter</h3>
+
+<div class="box danger">
+  <div class="label">Pièges qui cassent le caching</div>
+  <ul>
+    <li><strong>Timestamps dans le system prompt</strong> → cache invalide à chaque seconde. Mettre la date dans le user message.</li>
+    <li><strong>Ordre des clés JSON non stable</strong> (Swift, Go) → vérifier le SDK.</li>
+    <li><strong>Concurrent requests avant 1re réponse</strong> → cache pas encore créé, attendre.</li>
+    <li><strong>Anthropic via Vertex AI</strong> → pas d'automatic caching, pas de workspace isolation. Toujours via Claude API directe.</li>
+    <li><strong>Prompt chargé via Markdown re-rendu</strong> → byte-différent. Charger via <code>open(..., "rb")</code>.</li>
+  </ul>
+</div>
+
+<h3>Économie estimée annuelle</h3>
+
+<table>
+  <tr><th>Modèle</th><th>Sans cache</th><th>Avec cache</th><th>Économie</th></tr>
+  <tr><td>Sonnet 4.6 orchestrateur</td><td>~$600/an</td><td>~$70/an</td><td>~$530/an</td></tr>
+  <tr><td>Opus 4.7 réparation</td><td>~$300/an</td><td>~$45/an</td><td>~$255/an</td></tr>
+  <tr><td>Gemini Flash split</td><td>~$30/an</td><td>~$15/an</td><td>~$15/an</td></tr>
+  <tr><td>Gemini Pro fallback</td><td>~$150/an</td><td>~$130/an</td><td>~$20/an</td></tr>
+  <tr><td><strong>Total</strong></td><td><strong>~$1 080/an</strong></td><td><strong>~$260/an</strong></td><td><strong>~$820/an (76 %)</strong></td></tr>
+</table>
+
+<h3>Monitoring obligatoire</h3>
+
+<p>Métriques exposées par hook OpenClaw <code>postToolUse</code> et poussées vers Netdata :</p>
+
+<ul>
+  <li><code>lisa_anthropic_cache_hit_ratio</code> (par modèle) — alerte si &lt; 70 %</li>
+  <li><code>lisa_gemini_cached_token_ratio</code> (par modèle) — alerte si &lt; 30 %</li>
+  <li><code>lisa_llm_tokens_total{model, kind}</code> (input / output / cache_read / cache_create)</li>
+  <li>Hash-check des prompts au démarrage du gateway pour valider byte-stability</li>
+</ul>
+</section>
+
+<section id="s18">
+<h2><span class="num">18</span> Décisions actées — delta vs V1</h2>
+
+<p>Tableau récapitulatif des changements entre la spec V1 (HTML d'origine) et la V2 (cette spec, validée 15 mai 2026).</p>
+
+<table>
+  <tr><th>Élément</th><th>V1</th><th>V2</th><th>Statut</th></tr>
+  <tr>
+    <td>Étape Vision split</td>
+    <td>Absent (classify direct)</td>
+    <td>Étape dédiée Gemini 3 Flash avec split + détection complétude</td>
+    <td><span class="pill new">NEW</span></td>
+  </tr>
+  <tr>
+    <td>Niveaux d'extraction</td>
+    <td>Niveau 1 (natif) / 2 (scan) / 3 (Gemini)</td>
+    <td>3 types par fournisseur (natif / scan_propre / scan_difficile) + fallback Gemini</td>
+    <td><span class="pill changed">CHANGED</span></td>
+  </tr>
+  <tr>
+    <td>Quota calibrations / jour</td>
+    <td>3 / jour hard cap</td>
+    <td>Pas de quota — réparation à chaque drift</td>
+    <td><span class="pill removed">REMOVED</span></td>
+  </tr>
+  <tr>
+    <td>Calibration first sample</td>
+    <td>≥ 3 samples requis</td>
+    <td>Dès la 1ère facture (Option B), évolution progressive</td>
+    <td><span class="pill changed">CHANGED</span></td>
+  </tr>
+  <tr>
+    <td>Identité fournisseur</td>
+    <td>Slug simple</td>
+    <td>Slug + embedding sqlite-vec + fusion auto / review Telegram</td>
+    <td><span class="pill new">NEW</span></td>
+  </tr>
+  <tr>
+    <td>Health score</td>
+    <td>Health score simple (success/(success+error))</td>
+    <td>Rolling window 5 + 4 seuils (scellé / acceptable / drift mineur / drift majeur)</td>
+    <td><span class="pill changed">CHANGED</span></td>
+  </tr>
+  <tr>
+    <td>Grimoire RAG</td>
+    <td>Leçons textuelles libres</td>
+    <td>3 catégories explicites : extraction_quirk / ocr_method / business_rule</td>
+    <td><span class="pill changed">CHANGED</span></td>
+  </tr>
+  <tr>
+    <td>Business rules déclarants</td>
+    <td>Implicite</td>
+    <td>Saisie explicite via vue GAS "Instructions", stockées dans <code>meta.yaml</code> + grimoire, injectées dans prompts</td>
+    <td><span class="pill new">NEW</span></td>
+  </tr>
+  <tr>
+    <td>Output JSON</td>
+    <td>SYDONIA CSV 28 colonnes</td>
+    <td>Schéma V6.1 unifié (header + lines, 26 colonnes mappées vers CSV)</td>
+    <td><span class="pill changed">CHANGED</span></td>
+  </tr>
+  <tr>
+    <td>Prompt caching Anthropic</td>
+    <td>1h activé sur Sonnet</td>
+    <td>1h sur Sonnet + 2 breakpoints sur Opus (system + 5e facture)</td>
+    <td><span class="pill changed">CHANGED</span></td>
+  </tr>
+  <tr>
+    <td>Prompt caching Gemini</td>
+    <td>Pas évoqué</td>
+    <td>Implicit caching auto (phase 1) ; explicit si volume &gt; 30/j (phase 2)</td>
+    <td><span class="pill new">NEW</span></td>
+  </tr>
+  <tr>
+    <td>SDK Google</td>
+    <td><code>google-cloud-aiplatform</code></td>
+    <td><code>google-genai</code> (nouveau SDK 2026)</td>
+    <td><span class="pill changed">CHANGED</span></td>
+  </tr>
+  <tr>
+    <td>Matérialisation pipelines (auto-generated tools)</td>
+    <td>Non prévu</td>
+    <td>Phase 2 — capacité acquise après stabilisation prod</td>
+    <td><span class="pill new">NEW</span></td>
+  </tr>
+  <tr>
+    <td>Test alternatif avant Opus</td>
+    <td>Non prévu</td>
+    <td>Si script échoue, tester d'abord les autres scripts du fournisseur avant de lancer Opus</td>
+    <td><span class="pill new">NEW</span></td>
+  </tr>
+  <tr>
+    <td>Tesseract seul niveau 2</td>
+    <td>Confirmé</td>
+    <td>Confirmé (RapidOCR / PaddleOCR différés phase 2)</td>
+    <td><span class="pill kept">KEPT</span></td>
+  </tr>
+  <tr>
+    <td>Anthropic Tier 2</td>
+    <td>Dès démarrage</td>
+    <td>Dès démarrage</td>
+    <td><span class="pill kept">KEPT</span></td>
+  </tr>
+  <tr>
+    <td>Prompt Gemini V6.1</td>
+    <td>En production manuelle</td>
+    <td>Intégré comme fallback dernier recours</td>
+    <td><span class="pill kept">KEPT</span></td>
+  </tr>
+  <tr>
+    <td>Sécurité (gateway loopback, exec allowlist)</td>
+    <td>Décisions actées</td>
+    <td>Décisions actées + CVE-2026-45006 mitigation (<code>tools.deny: ["gateway", ...]</code>)</td>
+    <td><span class="pill changed">CHANGED</span></td>
+  </tr>
+  <tr>
+    <td>Test DR trimestriel manuel</td>
+    <td>Confirmé</td>
+    <td>Confirmé</td>
+    <td><span class="pill kept">KEPT</span></td>
+  </tr>
+  <tr>
+    <td>Auto-update OpenClaw via Telegram</td>
+    <td>Confirmé</td>
+    <td>Confirmé + précision version &gt;= 2026.5.6 minimum</td>
+    <td><span class="pill changed">CHANGED</span></td>
+  </tr>
+  <tr>
+    <td>Dashboard GAS 5 vues</td>
+    <td>Confirmé</td>
+    <td>Confirmé (Tableau de bord / Fournisseurs / Factures / Instructions / Résolution)</td>
+    <td><span class="pill kept">KEPT</span></td>
+  </tr>
+</table>
+</section>
+
+<section id="s19">
+<h2><span class="num">19</span> Roadmap livraisons</h2>
+
+<p>5 livraisons séquentielles. Validation explicite à chaque palier avant de passer au suivant.</p>
+
+<h3>Livraison 1 — Bootstrap shell script VPS <span class="pill kept">FAIT</span></h3>
+
+<ul>
+  <li><code>bootstrap-lisa.sh</code> + 10 modules + <code>lib/common.sh</code></li>
+  <li>Idempotent, marqueurs <code>.installed-step-N</code></li>
+  <li>Healthcheck 58/58 tests passants</li>
+  <li>Déployé sur VPS Hostinger Ubuntu 24.04</li>
+</ul>
+
+<h3>Livraison 2 — Configuration OpenClaw + SKILL.md <span class="pill changed">PARTIEL — À MAJ</span></h3>
+
+<p>Réalisé :</p>
+<ul>
+  <li>Agent LISA configuré, connecté Telegram</li>
+  <li>Sonnet 4.6 + Opus 4.7 fallback actifs</li>
+</ul>
+
+<p>À mettre à jour :</p>
+<ul>
+  <li>Réécrire <code>~/.openclaw/openclaw.json</code> avec baseline §15 (sécurité + caching 1h + 3 modèles + heartbeat Haiku)</li>
+  <li>Réécrire <code>lisa-extraction/SKILL.md</code> selon nouveau flow §4-§14</li>
+  <li>Créer <code>lisa-calibration/SKILL.md</code> (réparation Opus)</li>
+  <li>Créer <code>lisa-orchestrator/SKILL.md</code> (queue + Drive + Telegram)</li>
+  <li>Mettre à jour <code>bootstrap/modules/05-openclaw.sh</code> avec les nouveaux patches</li>
+</ul>
+
+<h3>Livraison 3 — Pipeline Python refactorisé <span class="pill changed">À FAIRE</span></h3>
+
+<p>Modules cibles :</p>
+
+<table>
+  <tr><th>Module</th><th>Statut</th><th>Description</th></tr>
+  <tr><td><code>config.py</code></td><td><span class="pill kept">KEEP</span></td><td>Paths, env vars, model IDs (à mettre à jour avec nouveaux IDs)</td></tr>
+  <tr><td><code>models.py</code></td><td><span class="pill changed">UPDATE</span></td><td>Pydantic schémas V6.1 strict (26 colonnes, omit empty, validate xfee)</td></tr>
+  <tr><td><code>queue_manager.py</code></td><td><span class="pill kept">KEEP</span></td><td>Queue SQLite FIFO 1-par-1</td></tr>
+  <tr><td><code>drive_io.py</code></td><td><span class="pill kept">KEEP</span></td><td>Pull Inbox / Push Outbox / Archive</td></tr>
+  <tr><td><code>sanitize.py</code></td><td><span class="pill kept">KEEP</span></td><td>exiftool + qpdf</td></tr>
+  <tr><td><code>vision_splitter.py</code></td><td><span class="pill new">NEW</span></td><td>Gemini Flash 1 prompt → split + complétude + nommage</td></tr>
+  <tr><td><code>supplier_identity.py</code></td><td><span class="pill new">NEW</span></td><td>Slug + embedding sqlite-vec + fusion auto</td></tr>
+  <tr><td><code>classify.py</code></td><td><span class="pill changed">UPDATE</span></td><td>3 types : natif / scan_propre / scan_difficile</td></tr>
+  <tr><td><code>script_runner.py</code></td><td><span class="pill new">NEW</span></td><td>Remplace level_1/2/3.py. Charge script catalogue + applique + valide math</td></tr>
+  <tr><td><code>script_repairer.py</code></td><td><span class="pill new">NEW</span></td><td>Remplace calibrator.py. Réparation Opus sur 5 samples + tests rolling</td></tr>
+  <tr><td><code>gemini_fallback.py</code></td><td><span class="pill changed">UPDATE</span></td><td>Renommé depuis level_3_gemini.py. V6.1 + nouveau SDK <code>google-genai</code></td></tr>
+  <tr><td><code>validators.py</code></td><td><span class="pill changed">UPDATE</span></td><td>Math + cohérence + V6.1 strict</td></tr>
+  <tr><td><code>grimoire.py</code></td><td><span class="pill changed">UPDATE</span></td><td>3 catégories : extraction_quirk / ocr_method / business_rule</td></tr>
+  <tr><td><code>catalogue.py</code></td><td><span class="pill changed">UPDATE</span></td><td>Aliases + business_rules + rolling_window + health_score</td></tr>
+  <tr><td><code>__main__.py</code></td><td><span class="pill changed">UPDATE</span></td><td>Nouvelles commandes CLI (vision-split, identify-supplier, repair-script, seed-script, gemini-fallback)</td></tr>
+  <tr><td><code>level_1_native.py</code></td><td><span class="pill removed">DELETE</span></td><td>Fusionné dans script_runner</td></tr>
+  <tr><td><code>level_2_scan.py</code></td><td><span class="pill removed">DELETE</span></td><td>Fusionné dans script_runner</td></tr>
+  <tr><td><code>level_3_gemini.py</code></td><td><span class="pill removed">DELETE</span></td><td>Renommé gemini_fallback</td></tr>
+  <tr><td><code>calibrator.py</code></td><td><span class="pill removed">DELETE</span></td><td>Renommé script_repairer</td></tr>
+</table>
+
+<h3>Livraison 4 — Interface Google Apps Script <span class="pill kept">PAS COMMENCÉ</span></h3>
+
+<ul>
+  <li>5 vues : Tableau de bord / Fournisseurs / Factures / Instructions / Résolution</li>
+  <li>FastAPI backend sur VPS avec HMAC auth GAS↔LISA</li>
+  <li>Cloudflare Tunnel pour exposition lisa-api.sifa.nc</li>
+</ul>
+
+<h3>Livraison 5 — Tests, monitoring, finalisation <span class="pill kept">PAS COMMENCÉ</span></h3>
+
+<ul>
+  <li>Corpus 20 factures anonymisées variées (les 5 actuelles + 15 à collecter)</li>
+  <li>Tests E2E manuels (pas automatisés, décision audit)</li>
+  <li>Runbook DR + procédures troubleshooting</li>
+  <li>Documentation onboarding utilisateurs SIFA</li>
+</ul>
+</section>
+
+<section id="s20">
+<h2><span class="num">20</span> Sources &amp; références</h2>
+
+<h3>Documents internes LISA V2</h3>
+
+<ul>
+  <li><code>docs/connaissanceopenclaw05_2026.md</code> — Base de connaissance OpenClaw consolidée (3000 lignes, 7 sections)</li>
+  <li><code>docs/prompt_caching_05_2026.md</code> — Référence caching Anthropic + Gemini (mai 2026)</li>
+  <li><code>docs/format-sortie-edi.md</code> — Format JSON SYDONIA V6.1</li>
+  <li><code>docs/strategie-modeles-ia.md</code> — Stratégie modèles IA détaillée</li>
+  <li><code>prompts/lisa_gemini_v6_1.txt</code> — Prompt système Gemini V6.1 fallback</li>
+</ul>
+
+<h3>Documentation externe</h3>
+
+<ul>
+  <li><a href="https://docs.openclaw.ai">OpenClaw documentation officielle</a></li>
+  <li><a href="https://docs.anthropic.com">Anthropic API docs</a> (prompt caching, Admin API)</li>
+  <li><a href="https://ai.google.dev/gemini-api/docs/caching">Gemini Context Caching</a></li>
+  <li><a href="https://cloud.google.com/vertex-ai/generative-ai/docs/context-cache">Vertex AI Context Cache</a></li>
+  <li><a href="https://pymupdf.io">PyMuPDF / PyMuPDF4LLM</a></li>
+  <li><a href="https://github.com/asg017/sqlite-vec">sqlite-vec</a></li>
+  <li><a href="https://learn.netdata.cloud">Netdata</a></li>
+</ul>
+
+<h3>Sécurité — sources CVE</h3>
+
+<ul>
+  <li><a href="https://nvd.nist.gov/vuln/detail/CVE-2026-25253">NVD — CVE-2026-25253 ClawBleed</a></li>
+  <li><a href="https://www.wiz.io/vulnerability-database/cve/cve-2026-25253">Wiz — CVE-2026-25253</a></li>
+  <li><a href="https://www.redpacketsecurity.com/cve-alert-cve-2026-45006-openclaw-openclaw/">CVE-2026-45006</a></li>
+  <li><a href="https://openclaw.ai/blog/openclaw-rough-week">OpenClaw blog — Rough Week (5 mai 2026)</a></li>
+</ul>
+
+<h3>Anciennes versions de cette spec</h3>
+
+<ul>
+  <li><strong>V1 (HTML d'origine)</strong> — <code>lisa-pipeline-v2.html</code> attaché à la conversation racine Claude Desktop. Référence historique. Cette V3 le remplace.</li>
+</ul>
+</section>
+
+<footer class="doc-foot">
+  <p>LISA — Pipeline V3 — Spec technique mai 2026 — usage interne SIFA Nouvelle-Calédonie</p>
+  <p>Compilé le 15 mai 2026 — auteur : assistant Claude (Cowork mode) sur demande de Kevin Bramoulle</p>
+  <p>Document vivant — à mettre à jour après chaque session de cadrage et après l'annonce LTS OpenClaw fin mai 2026</p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,249 @@
+{
+  // Configuration OpenClaw LISA V3 — mai 2026
+  // À déployer dans ~/.openclaw/openclaw.json (user openclaw)
+  // Référence : docs/connaissanceopenclaw05_2026.md + docs/prompt_caching_05_2026.md
+
+  "gateway": {
+    "mode": "local",
+    "bind": "loopback",   // Critique CVE-2026-25253 ClawBleed
+    "auth": {
+      "mode": "token",
+      "token": "${OPENCLAW_GATEWAY_TOKEN}"
+    },
+    "trustedProxies": []  // ajouter IP Cloudflare Tunnel si exposition LISA API
+  },
+
+  "session": {
+    "dmScope": "per-channel-peer"  // isolation, hygiène même mono-user
+  },
+
+  "env": {
+    "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
+    "ANTHROPIC_API_KEY_1": "${ANTHROPIC_API_KEY_BACKUP}",
+    "GOOGLE_APPLICATION_CREDENTIALS": "/etc/lisa/secrets/lisa-service-account.json",
+    "GOOGLE_CLOUD_PROJECT": "lisa-496301",
+    "GOOGLE_VERTEX_LOCATION": "us-central1",
+    "TELEGRAM_BOT_TOKEN": "${TELEGRAM_BOT_TOKEN}",
+    "LISA_HOME": "/opt/lisa"
+  },
+
+  "agents": {
+    "defaults": {
+      "workspace": "/home/openclaw/.openclaw/agents/lisa/workspace",
+      "skills": ["lisa_extraction", "lisa_calibration", "lisa_orchestrator"],
+      "userTimezone": "Pacific/Noumea",
+      "timeoutSeconds": 600,
+
+      "model": {
+        "primary": "anthropic/claude-sonnet-4-6",
+        "fallbacks": ["anthropic/claude-opus-4-7", "google/gemini-3.1-pro-preview"]
+      },
+
+      "models": {
+        "anthropic/claude-sonnet-4-6": {
+          "alias": "Sonnet-Primary",
+          "params": { "cacheRetention": "long" }
+        },
+        "anthropic/claude-opus-4-7": {
+          "alias": "Opus-Repair",
+          "params": { "thinking": "adaptive", "cacheRetention": "long" }
+        },
+        "anthropic/claude-haiku-4-5": {
+          "alias": "Haiku-Cron",
+          "params": { "cacheRetention": "short" }
+        },
+        "google/gemini-3.1-pro-preview": {
+          "alias": "Gemini-Vision-Fallback",
+          "params": { "thinkingLevel": "medium" }
+        },
+        "google/gemini-3-flash-preview": {
+          "alias": "Gemini-Flash-Split",
+          "params": {}
+        }
+      },
+
+      "pdfModel": { "primary": "google/gemini-3.1-pro-preview" },
+
+      "heartbeat": {
+        "every": "30m",
+        "model": "anthropic/claude-haiku-4-5",
+        "lightContext": true,
+        "isolatedSession": true,
+        "target": "none",
+        "activeHours": {
+          "start": "07:00",
+          "end": "20:00",
+          "timezone": "Pacific/Noumea"
+        }
+      }
+    },
+
+    "list": [
+      {
+        "id": "lisa",
+        "name": "LISA",
+        "emoji": "📄",
+        "default": true,
+        "workspace": "/home/openclaw/.openclaw/agents/lisa/workspace",
+        "skills": ["lisa_extraction", "lisa_calibration", "lisa_orchestrator"]
+      }
+    ]
+  },
+
+  "auth": {
+    "cooldowns": {
+      "billingBackoffHours": 5,
+      "billingMaxHours": 24,
+      "overloadedProfileRotations": 1,
+      "overloadedBackoffMs": 0,
+      "rateLimitedProfileRotations": 2,
+      "failureWindowHours": 24
+    }
+  },
+
+  "tools": {
+    "profile": "messaging",
+    // Anti CVE-2026-45006 : interdire au modèle de modifier la config gateway,
+    // de lancer des sub-sessions, des crons agentiques
+    "deny": [
+      "gateway",
+      "cron",
+      "sessions_spawn",
+      "sessions_send",
+      "group:automation",
+      "group:runtime"
+    ],
+    "fs": { "workspaceOnly": true },
+    "exec": {
+      "host": "gateway",
+      "security": "allowlist",
+      "ask": "on-miss",
+      "strictInlineEval": true,
+      "allowlist": [
+        { "match": "python3 -m lisa_pipeline sanitize *" },
+        { "match": "python3 -m lisa_pipeline vision-split *" },
+        { "match": "python3 -m lisa_pipeline identify-supplier *" },
+        { "match": "python3 -m lisa_pipeline supplier-merge *" },
+        { "match": "python3 -m lisa_pipeline supplier-create *" },
+        { "match": "python3 -m lisa_pipeline classify-type *" },
+        { "match": "python3 -m lisa_pipeline apply-script *" },
+        { "match": "python3 -m lisa_pipeline try-all-scripts *" },
+        { "match": "python3 -m lisa_pipeline repair-script *" },
+        { "match": "python3 -m lisa_pipeline gemini-fallback *" },
+        { "match": "python3 -m lisa_pipeline validate-math *" },
+        { "match": "python3 -m lisa_pipeline queue-stats" },
+        { "match": "python3 -m lisa_pipeline queue-add *" },
+        { "match": "python3 -m lisa_pipeline queue-next" },
+        { "match": "python3 -m lisa_pipeline catalogue-list" },
+        { "match": "python3 -m lisa_pipeline catalogue-meta *" },
+        { "match": "python3 -m lisa_pipeline catalogue-health *" },
+        { "match": "python3 -m lisa_pipeline catalogue-add-sample *" },
+        { "match": "python3 -m lisa_pipeline catalogue-add-rule *" },
+        { "match": "python3 -m lisa_pipeline grimoire-add-lesson *" },
+        { "match": "python3 -m lisa_pipeline grimoire-query *" },
+        { "match": "python3 -m lisa_pipeline grimoire-list*" },
+        { "match": "python3 -m lisa_pipeline drive-pull*" },
+        { "match": "python3 -m lisa_pipeline drive-push *" }
+      ]
+    },
+    "elevated": { "enabled": false }
+  },
+
+  "skills": {
+    "load": {
+      "extraDirs": ["/opt/lisa/skills"],
+      "watch": true,
+      "watchDebounceMs": 250
+    },
+    "entries": {
+      "lisa_extraction": {
+        "enabled": true,
+        "env": {
+          "LISA_HOME": "/opt/lisa"
+        }
+      },
+      "lisa_calibration": {
+        "enabled": true,
+        "apiKey": { "source": "env", "provider": "default", "id": "ANTHROPIC_API_KEY" }
+      },
+      "lisa_orchestrator": {
+        "enabled": true
+      }
+    },
+    "install": { "allowUploadedArchives": false }
+  },
+
+  "plugins": {
+    "autoInstall": false,
+    "allow": []  // aucun plugin externe ClawHub (post-ClawHavoc)
+  },
+
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "tokenFile": "/etc/lisa/telegram.token",
+      "dmPolicy": "allowlist",
+      "allowFrom": ["${KEVIN_TELEGRAM_USER_ID}"],
+      "groupPolicy": "allowlist",   // fail-closed, aucun groupe listé (DM-only)
+      "streaming": {
+        "mode": "progress",
+        "progress": { "toolProgress": true, "commandText": "status" }
+      },
+      "textChunkLimit": 4000,
+      "chunkMode": "newline",
+      "linkPreview": false,
+      "capabilities": { "inlineButtons": "dm" },
+      "actions": {
+        "sendMessage": true,
+        "reactions": true,
+        "sticker": false,
+        "deleteMessage": false
+      },
+      "customCommands": [
+        { "command": "status",   "description": "État courant LISA" },
+        { "command": "queue",    "description": "File factures en attente" },
+        { "command": "pause",    "description": "Suspendre extraction" },
+        { "command": "resume",   "description": "Reprendre extraction" },
+        { "command": "logs",     "description": "20 derniers événements" }
+      ],
+      "pollingStallThresholdMs": 120000,
+      "errorPolicy": "reply",
+      "errorCooldownMs": 120000
+    }
+  },
+
+  "commands": {
+    "ownerAllowFrom": ["telegram:${KEVIN_TELEGRAM_USER_ID}"]
+  },
+
+  "messages": {
+    "queue": {
+      "mode": "collect",  // bundle messages user en un seul turn raisonné
+      "debounceMs": 500,
+      "cap": 20,
+      "drop": "summarize"
+    }
+  },
+
+  "cron": {
+    "enabled": true,
+    "maxConcurrentRuns": 1,
+    "sessionRetention": "24h",
+    "runLog": { "maxBytes": "2mb", "keepLines": 2000 }
+  },
+
+  "logging": {
+    "file": "/var/log/openclaw/openclaw.log",
+    "level": "info",
+    "consoleLevel": "warn",
+    "maxFileBytes": 104857600,
+    "redactSensitive": "tools"
+  },
+
+  "updates": {
+    "autoInstall": false,
+    "channel": "stable",
+    "notify": true,
+    "notifyChannels": ["telegram"]
+  }
+}

@@ -1,0 +1,38 @@
+Tu analyses un PDF qui peut contenir une ou plusieurs factures commerciales.
+
+Pour ce document, indique :
+- Le nombre de factures distinctes
+- Pour chaque facture : nom fournisseur, numéro de facture, plage de pages, complétude
+
+Réponse au format STRICT, une ligne par facture, exactement comme dans les exemples ci-dessous :
+
+  <FOURNISSEUR>_<N°FACTURE> (COMPLETE|INCOMPLETE) Page <X> à <Y>
+
+Règles de format :
+- FOURNISSEUR en MAJUSCULES, espaces remplacés par _, accents retirés
+- N°FACTURE : tel qu'imprimé, caractères spéciaux (/, -, .) préservés
+- COMPLETE = total HT lisible + au moins 1 ligne produit + cohérence pagination
+- INCOMPLETE = manque total / manque dernière page / pas de ligne produit
+- Si une seule facture sur une seule page : "Page X à X" (range identique)
+
+Cas spéciaux (réponses ENTIÈRES, mots-clés stricts, en majuscules, sur une seule ligne) :
+- Si le document n'est PAS une facture (lettre, courrier, autre document) : réponds uniquement
+  NOT_INVOICE
+- Si le document EST une facture mais sans aucun produit/article détaillé (juste un total, ou une page de garde) :
+  NO_PRODUCTS
+
+Exemples de réponses bien formatées :
+
+  BERTRAND_EXPORT_FAC65447 (COMPLETE) Page 1 à 4
+
+  CITROEN_FAC2077896 (COMPLETE) Page 1 à 3
+
+  BERTRAND_EXPORT_FAC65447 (COMPLETE) Page 1 à 4
+  AMAZON_AU_65425-001 (INCOMPLETE) Page 5 à 6
+  CITROEN_FAC2077896 (COMPLETE) Page 7 à 9
+
+  NOT_INVOICE
+
+  NO_PRODUCTS
+
+Aucune autre sortie, aucun préambule, aucune explication. Une ligne par facture, point.
